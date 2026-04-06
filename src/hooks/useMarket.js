@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { STOCKS, generateHistoricalData, TIMEFRAMES } from '../data/stocks';
 import { loadPortfolio, savePortfolio } from '../utils/auth';
 import { checkAlerts } from '../utils/alerts';
+import { useWebSocket } from './useWebSocket';
 
 const INITIAL_BALANCE = 100000;
 
@@ -41,6 +42,9 @@ export function useMarket(user) {
   const portfolioRef = useRef(portfolio);
   portfolioRef.current = portfolio;
 
+  // WebSocket connection
+  const { connected: wsConnected, stocks: wsStocks } = useWebSocket();
+
   // Re-init portfolio when user changes
   useEffect(() => {
     setPortfolio(initPortfolio(userId));
@@ -57,8 +61,43 @@ export function useMarket(user) {
     }));
   }, []);
 
-  // Market tick
+  // Merge WebSocket market data into local stocks
   useEffect(() => {
+    if (!wsStocks || wsStocks.length === 0) return;
+    const tfObj = TIMEFRAMES.find(t => t.label === timeframe) || TIMEFRAMES[5];
+    setStocks(prev => prev.map(local => {
+      const remote = wsStocks.find(s => s.symbol === local.symbol);
+      if (!remote) return local;
+      // Update candle history with latest price
+      const updatedHistory = { ...local.history };
+      if (updatedHistory[timeframe]?.length > 0) {
+        const candles = [...updatedHistory[timeframe]];
+        const last = { ...candles[candles.length - 1] };
+        last.close = remote.currentPrice;
+        last.high = Math.max(last.high, remote.currentPrice);
+        last.low = Math.min(last.low, remote.currentPrice);
+        last.volume = remote.volume || last.volume;
+        candles[candles.length - 1] = last;
+        updatedHistory[timeframe] = candles;
+      }
+      return {
+        ...local,
+        currentPrice: remote.currentPrice,
+        prevPrice: remote.prevPrice || local.prevPrice,
+        change: remote.change,
+        changePct: remote.changePct,
+        bid: remote.bid,
+        ask: remote.ask,
+        volume: remote.volume,
+        marketImpact: remote.marketImpact || 0,
+        history: updatedHistory,
+      };
+    }));
+  }, [wsStocks, timeframe]);
+
+  // Market tick (fallback when WebSocket disconnected)
+  useEffect(() => {
+    if (wsConnected) return; // use server data when connected
     const tfObj = TIMEFRAMES.find(t => t.label === timeframe) || TIMEFRAMES[5];
     const interval = setInterval(() => {
       setStocks(prev => prev.map(s => {
@@ -104,7 +143,7 @@ export function useMarket(user) {
       }));
     }, 800);
     return () => clearInterval(interval);
-  }, [timeframe]);
+  }, [timeframe, wsConnected]);
 
   // PnL recalculation
   useEffect(() => {
