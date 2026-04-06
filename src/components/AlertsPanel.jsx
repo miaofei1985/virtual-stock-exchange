@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { loadAlerts, createAlert, deleteAlert } from '../utils/alerts';
+import { api } from '../utils/api';
 
 const TYPE_LABELS = {
   above: { label: 'Price Above ▲', color: 'text-up', bg: 'bg-teal-900/30 border-teal-800' },
@@ -14,26 +14,36 @@ export default function AlertsPanel({ userId, stocks, selectedSymbol, onClose, o
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (userId) setAlerts(loadAlerts(userId));
+    if (userId) {
+      api.getAlerts().then(setAlerts).catch(() => {});
+    }
   }, [userId]);
 
-  const handleAdd = (e) => {
+  const handleAdd = async (e) => {
     e.preventDefault();
     setError('');
     if (!form.price || isNaN(parseFloat(form.price)) || parseFloat(form.price) <= 0) {
       setError('Enter a valid price'); return;
     }
-    const newAlert = createAlert(userId, form);
-    const updated = [...alerts, newAlert];
-    setAlerts(updated);
-    onAlertsChange && onAlertsChange(updated);
-    setForm(f => ({ ...f, price: '', note: '' }));
+    try {
+      const result = await api.addAlert(form.symbol, form.type, parseFloat(form.price));
+      const newAlert = { id: result.id, symbol: form.symbol, type: form.type, price: parseFloat(form.price), active: 1, created_at: Date.now() };
+      const updated = [...alerts, newAlert];
+      setAlerts(updated);
+      onAlertsChange && onAlertsChange(updated);
+      setForm(f => ({ ...f, price: '', note: '' }));
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
-  const handleDelete = (id) => {
-    const updated = deleteAlert(userId, id);
-    setAlerts(updated);
-    onAlertsChange && onAlertsChange(updated);
+  const handleDelete = async (id) => {
+    try {
+      await api.removeAlert(id);
+      const updated = alerts.filter(a => a.id !== id);
+      setAlerts(updated);
+      onAlertsChange && onAlertsChange(updated);
+    } catch {}
   };
 
   const stock = stocks.find(s => s.symbol === form.symbol);
@@ -105,22 +115,23 @@ export default function AlertsPanel({ userId, stocks, selectedSymbol, onClose, o
             <div className="flex flex-col gap-2">
               {alerts.map(a => {
                 const meta = TYPE_LABELS[a.type] || TYPE_LABELS.above;
+                const triggered = a.triggered || a.active === 0;
                 return (
                   <div key={a.id}
-                    className={`flex items-start justify-between p-3 rounded-lg border text-xs ${meta.bg} ${a.triggered ? 'opacity-50' : ''}`}>
+                    className={`flex items-start justify-between p-3 rounded-lg border text-xs ${meta.bg} ${triggered ? 'opacity-50' : ''}`}>
                     <div>
                       <div className="flex items-center gap-2 mb-0.5">
                         <span className="font-bold text-white">{a.symbol}</span>
                         <span className={`font-semibold ${meta.color}`}>{meta.label}</span>
                         <span className="font-mono text-white font-bold">${a.price.toFixed(2)}</span>
-                        {a.triggered && <span className="text-yellow-400">✓ Triggered</span>}
+                        {triggered && <span className="text-yellow-400">✓ Triggered</span>}
                       </div>
                       {a.note && <div className="text-gray-400">{a.note}</div>}
                       <div className="text-gray-600 mt-0.5">
-                        Set {new Date(a.createdAt).toLocaleString()}
+                        Set {new Date(a.createdAt || a.created_at * 1000).toLocaleString()}
                       </div>
                     </div>
-                    {!a.triggered && (
+                    {!triggered && (
                       <button onClick={() => handleDelete(a.id)}
                         className="text-gray-600 hover:text-down ml-3 mt-0.5 text-base leading-none">×</button>
                     )}
