@@ -1,7 +1,8 @@
 {
   "name": "virtual-stock-exchange",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
+  "proxy": "http://localhost:3001",
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -15,7 +16,9 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test"
+    "test": "react-scripts test",
+    "server": "cd server && node index.js",
+    "dev:full": "concurrently \"npm run server\" \"npm start\""
   },
   "browserslist": {
     "production": [">0.2%", "not dead", "not op_mini all"],
