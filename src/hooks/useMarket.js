@@ -48,9 +48,38 @@ export function useMarket(user) {
   // WebSocket connection
   const { connected: wsConnected, stocks: wsStocks } = useWebSocket();
 
-  // Re-init portfolio when user changes
+  // Re-init portfolio when user changes — fetch from backend first
   useEffect(() => {
-    setPortfolio(initPortfolio(userId));
+    if (!userId) {
+      setPortfolio({ balance: INITIAL_BALANCE, positions: {}, orders: [], pnl: 0 });
+      return;
+    }
+    // Try backend first, fallback to localStorage
+    api.getPortfolio()
+      .then(data => {
+        const positions = {};
+        (data.positions || []).forEach(p => {
+          positions[p.symbol] = { shares: p.shares, avgCost: p.avg_cost };
+        });
+        const orders = (data.orders || []).map(o => ({
+          id: o.id, time: new Date(o.created_at * 1000).toLocaleTimeString(),
+          symbol: o.symbol, side: o.side, qty: o.quantity,
+          price: o.price, total: o.total, realizedPnl: o.realized_pnl,
+        }));
+        const portfolio = {
+          balance: data.portfolio.balance,
+          positions,
+          orders,
+          pnl: 0,
+        };
+        setPortfolio(portfolio);
+        // Cache to localStorage
+        savePortfolio(userId, { ...portfolio, equity: data.portfolio.equity, totalPnl: data.portfolio.total_pnl });
+      })
+      .catch(() => {
+        // Backend unavailable — use localStorage fallback
+        setPortfolio(initPortfolio(userId));
+      });
   }, [userId]);
 
   // Pre-generate all history
