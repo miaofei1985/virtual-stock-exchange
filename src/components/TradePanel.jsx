@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 
-export default function TradePanel({ stock, portfolio, executeTrade }) {
+export default function TradePanel({ stock, portfolio, executeTrade, placePendingOrder }) {
   const [qty, setQty] = useState('');
   const [side, setSide] = useState('buy');
+  const [orderType, setOrderType] = useState('market');
+  const [triggerPrice, setTriggerPrice] = useState('');
 
   if (!stock) return null;
 
@@ -14,8 +16,14 @@ export default function TradePanel({ stock, portfolio, executeTrade }) {
   const positionPnl = position ? +((stock.currentPrice - position.avgCost) * position.shares).toFixed(2) : 0;
 
   const handleTrade = () => {
-    executeTrade(stock.symbol, side, parsedQty);
+    if (orderType === 'market') {
+      executeTrade(stock.symbol, side, parsedQty);
+    } else {
+      const type = `${orderType}_${side}`;
+      placePendingOrder(stock.symbol, type, parsedQty, parseFloat(triggerPrice));
+    }
     setQty('');
+    setTriggerPrice('');
   };
 
   const setQtyPct = (pct) => {
@@ -76,6 +84,27 @@ export default function TradePanel({ stock, portfolio, executeTrade }) {
         </div>
       </div>
 
+      {/* Order type */}
+      <div className="px-3 py-2 border-b border-dark-600">
+        <label className="text-xs text-gray-500 block mb-1">Order Type</label>
+        <div className="flex gap-1">
+          {[{v:'market',l:'Market'},{v:'limit',l:'Limit'},{v:'stop',l:'Stop'}].map(t => (
+            <button key={t.v}
+              className={`flex-1 py-1 text-xs font-bold rounded transition-all ${orderType === t.v ? 'bg-dark-500 text-white border border-dark-300' : 'bg-dark-700 text-gray-400 hover:text-white border border-transparent'}`}
+              onClick={() => setOrderType(t.v)}>{t.l}</button>
+          ))}
+        </div>
+        {orderType !== 'market' && (
+          <div className="mt-1.5">
+            <label className="text-xs text-gray-500 block mb-1">
+              {orderType === 'limit' ? (side === 'buy' ? 'Buy below price' : 'Sell above price') : (side === 'buy' ? 'Buy above price' : 'Sell below price')}
+            </label>
+            <input className="input-dark" type="number" min="0" step="0.01" value={triggerPrice}
+              onChange={e => setTriggerPrice(e.target.value)} placeholder={stock.currentPrice.toFixed(2)} />
+          </div>
+        )}
+      </div>
+
       {/* Quantity */}
       <div className="px-3 py-2 border-b border-dark-600">
         <label className="text-xs text-gray-500 block mb-1">Quantity (shares)</label>
@@ -97,8 +126,8 @@ export default function TradePanel({ stock, portfolio, executeTrade }) {
       {/* Execute */}
       <div className="px-3 py-2">
         <button className={side === 'buy' ? 'btn-buy w-full' : 'btn-sell w-full'}
-          onClick={handleTrade} disabled={!parsedQty}>
-          {side === 'buy' ? '▲ BUY' : '▼ SELL'} {stock.symbol}
+          onClick={handleTrade} disabled={!parsedQty || (orderType !== 'market' && !triggerPrice)}>
+          {orderType === 'market' ? (side === 'buy' ? '▲ BUY' : '▼ SELL') : `📋 ${orderType.toUpperCase()} ${side.toUpperCase()}`} {stock.symbol}
         </button>
       </div>
 

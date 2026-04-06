@@ -35,6 +35,7 @@ export function useMarket(user) {
   const [timeframe, setTimeframe] = useState('1D');
   const [portfolio, setPortfolio] = useState(() => initPortfolio(userId));
   const [alerts, setAlerts] = useState([]);  // toast notifications
+  const [pendingOrders, setPendingOrders] = useState([]);
   const stocksRef = useRef(stocks);
   stocksRef.current = stocks;
   const portfolioRef = useRef(portfolio);
@@ -127,6 +128,32 @@ export function useMarket(user) {
     });
   }, [stocks, userId]);
 
+  // Check and execute pending limit/stop orders
+  useEffect(() => {
+    setPendingOrders(prev => {
+      const remaining = [];
+      prev.forEach(order => {
+        const stock = stocksRef.current.find(s => s.symbol === order.symbol);
+        if (!stock) { remaining.push(order); return; }
+        const price = stock.currentPrice;
+        let triggered = false;
+        if (order.type === 'limit_buy' && price <= order.triggerPrice) triggered = true;
+        if (order.type === 'limit_sell' && price >= order.triggerPrice) triggered = true;
+        if (order.type === 'stop_buy' && price >= order.triggerPrice) triggered = true;
+        if (order.type === 'stop_sell' && price <= order.triggerPrice) triggered = true;
+        if (triggered) {
+          const side = order.type.includes('buy') ? 'buy' : 'sell';
+          executeTrade(order.symbol, side, order.quantity);
+          const label = order.type.replace('_', ' ').toUpperCase();
+          addAlert(`📋 ${label} filled: ${order.quantity} ${order.symbol} @ $${price.toFixed(2)}`, 'success');
+        } else {
+          remaining.push(order);
+        }
+      });
+      return remaining;
+    });
+  }, [stocks]);
+
   // Auto-save portfolio
   useEffect(() => {
     if (!userId) return;
@@ -146,6 +173,24 @@ export function useMarket(user) {
     setAlerts(prev => [...prev, { id, msg, type }]);
     setTimeout(() => setAlerts(prev => prev.filter(a => a.id !== id)), 4000);
   }, []);
+
+  const placePendingOrder = useCallback((symbol, type, quantity, triggerPrice) => {
+    const qty = parseFloat(quantity);
+    const tp = parseFloat(triggerPrice);
+    if (!qty || qty <= 0 || !tp || tp <= 0) { addAlert('Invalid order parameters', 'error'); return; }
+    const order = { id: Date.now(), symbol, type, quantity: qty, triggerPrice: tp, time: new Date().toLocaleTimeString() };
+    setPendingOrders(prev => [...prev, order]);
+    const label = type.replace('_', ' ').toUpperCase();
+    addAlert(`📋 ${label} placed: ${qty} ${symbol} @ $${tp}`, 'success');
+  }, [addAlert]);
+
+  const cancelPendingOrder = useCallback((orderId) => {
+    setPendingOrders(prev => {
+      const order = prev.find(o => o.id === orderId);
+      if (order) addAlert(`🗑 Order cancelled: ${order.type.replace('_',' ').toUpperCase()} ${order.quantity} ${order.symbol}`, 'warning');
+      return prev.filter(o => o.id !== orderId);
+    });
+  }, [addAlert]);
 
   const executeTrade = useCallback((symbol, side, quantity) => {
     const qty = parseFloat(quantity);
@@ -198,5 +243,5 @@ export function useMarket(user) {
 
   const selectedStock = stocks.find(s => s.symbol === selectedSymbol) || stocks[0];
 
-  return { stocks, selectedStock, selectedSymbol, setSelectedSymbol, timeframe, setTimeframe, portfolio, executeTrade, alerts };
+  return { stocks, selectedStock, selectedSymbol, setSelectedSymbol, timeframe, setTimeframe, portfolio, executeTrade, alerts, pendingOrders, placePendingOrder, cancelPendingOrder };
 }

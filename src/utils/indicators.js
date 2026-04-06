@@ -102,3 +102,51 @@ export function calcVolume(candles) {
     color: c.close >= c.open ? 'rgba(38,166,154,0.6)' : 'rgba(239,83,80,0.6)',
   }));
 }
+
+// Average True Range
+export function calcATR(candles, period = 14) {
+  if (candles.length < period + 1) return [];
+  const trs = [];
+  for (let i = 1; i < candles.length; i++) {
+    const c = candles[i], prev = candles[i - 1];
+    trs.push(Math.max(c.high - c.low, Math.abs(c.high - prev.close), Math.abs(c.low - prev.close)));
+  }
+  const result = [];
+  let atr = trs.slice(0, period).reduce((s, v) => s + v, 0) / period;
+  result.push({ time: candles[period].time, value: +atr.toFixed(4) });
+  for (let i = period; i < trs.length; i++) {
+    atr = (atr * (period - 1) + trs[i]) / period;
+    result.push({ time: candles[i + 1].time, value: +atr.toFixed(4) });
+  }
+  return result;
+}
+
+// Stochastic Oscillator (%K, %D)
+export function calcStochastic(candles, kPeriod = 14, dPeriod = 3) {
+  if (candles.length < kPeriod) return { kLine: [], dLine: [] };
+  const kLine = [];
+  for (let i = kPeriod - 1; i < candles.length; i++) {
+    const slice = candles.slice(i - kPeriod + 1, i + 1);
+    const high = Math.max(...slice.map(c => c.high));
+    const low = Math.min(...slice.map(c => c.low));
+    const k = high === low ? 50 : ((candles[i].close - low) / (high - low)) * 100;
+    kLine.push({ time: candles[i].time, value: +k.toFixed(2) });
+  }
+  const dLine = [];
+  for (let i = dPeriod - 1; i < kLine.length; i++) {
+    const avg = kLine.slice(i - dPeriod + 1, i + 1).reduce((s, p) => s + p.value, 0) / dPeriod;
+    dLine.push({ time: kLine[i].time, value: +avg.toFixed(2) });
+  }
+  return { kLine, dLine };
+}
+
+// Volume Weighted Average Price
+export function calcVWAP(candles) {
+  let cumTPV = 0, cumVol = 0;
+  return candles.map(c => {
+    const tp = (c.high + c.low + c.close) / 3;
+    cumTPV += tp * c.volume;
+    cumVol += c.volume;
+    return { time: c.time, value: cumVol === 0 ? tp : +(cumTPV / cumVol).toFixed(4) };
+  });
+}

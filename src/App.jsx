@@ -9,6 +9,7 @@ import AlertToast from './components/AlertToast';
 import AuthModal from './components/AuthModal';
 import Leaderboard from './components/Leaderboard';
 import AlertsPanel from './components/AlertsPanel';
+import PendingOrders from './components/PendingOrders';
 import { getCurrentUser, logout } from './utils/auth';
 
 export default function App() {
@@ -21,6 +22,7 @@ export default function App() {
     stocks, selectedStock, selectedSymbol, setSelectedSymbol,
     timeframe, setTimeframe,
     portfolio, executeTrade, alerts,
+    pendingOrders, placePendingOrder, cancelPendingOrder,
   } = useMarket(user);
 
   // Close user menu on outside click
@@ -157,13 +159,14 @@ export default function App() {
         </div>
 
         {/* Order Book + Trade Panel */}
-        <div className="flex-shrink-0 flex border-l border-dark-500" style={{width: '340px'}}>
-          <div style={{width:'160px', borderRight:'1px solid #2a2a35'}}>
+        <div className="flex-shrink-0 flex flex-col border-l border-dark-500" style={{width: '340px'}}>
+          <div style={{width:'160px', borderRight:'1px solid #2a2a35', flex:'1 1 auto', overflow:'hidden'}}>
             <OrderBook stock={selectedStock} />
           </div>
-          <div style={{width:'180px'}}>
-            <TradePanel stock={selectedStock} portfolio={portfolio} executeTrade={executeTrade} />
+          <div style={{width:'180px', flex:'1 1 auto', overflow:'hidden'}}>
+            <TradePanel stock={selectedStock} portfolio={portfolio} executeTrade={executeTrade} placePendingOrder={placePendingOrder} />
           </div>
+          <PendingOrders orders={pendingOrders} onCancel={cancelPendingOrder} />
         </div>
       </div>
 

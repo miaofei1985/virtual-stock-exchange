@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createChart, CrosshairMode } from 'lightweight-charts';
-import { calcSMA, calcEMA, calcBollinger, calcRSI, calcMACD, calcVolume } from '../utils/indicators';
+import { calcSMA, calcEMA, calcBollinger, calcRSI, calcMACD, calcVolume, calcATR, calcStochastic, calcVWAP } from '../utils/indicators';
 import { TIMEFRAMES } from '../data/stocks';
 
-const INDICATOR_OPTIONS = ['Volume', 'SMA 20', 'EMA 9', 'EMA 21', 'Bollinger', 'RSI', 'MACD'];
+const INDICATOR_OPTIONS = ['Volume', 'SMA 20', 'EMA 9', 'EMA 21', 'Bollinger', 'RSI', 'MACD', 'ATR', 'Stochastic', 'VWAP'];
 
 export default function Chart({ stock, timeframe, setTimeframe }) {
   const containerRef = useRef(null);
@@ -23,7 +23,7 @@ export default function Chart({ stock, timeframe, setTimeframe }) {
     const container = containerRef.current;
     const h = container.clientHeight;
     const w = container.clientWidth;
-    const hasSubChart = indicators.includes('RSI') || indicators.includes('MACD');
+    const hasSubChart = indicators.includes('RSI') || indicators.includes('MACD') || indicators.includes('ATR') || indicators.includes('Stochastic');
 
     // Cleanup
     if (chartRef.current) { try { chartRef.current.remove(); } catch {} chartRef.current = null; }
@@ -95,6 +95,11 @@ export default function Chart({ stock, timeframe, setTimeframe }) {
       const l = chart.addLineSeries({ ...opts, color: '#9c27b0' });
       u.setData(upper); m.setData(middle); l.setData(lower);
     }
+    if (indicators.includes('VWAP')) {
+      const s = chart.addLineSeries({ color: '#e040fb', lineWidth: 1.5, lineStyle: 3, priceLineVisible: false });
+      s.setData(calcVWAP(candles));
+      seriesRefs.current['VWAP'] = s;
+    }
 
     // Crosshair
     chart.subscribeCrosshairMove(param => {
@@ -137,6 +142,27 @@ export default function Chart({ stock, timeframe, setTimeframe }) {
         ml.setData(macdLine);
         const sl = subChart.addLineSeries({ color: '#ff9800', lineWidth: 1.5, priceLineVisible: false });
         sl.setData(signalLine);
+      }
+
+      if (indicators.includes('ATR')) {
+        const atrData = calcATR(candles);
+        const atrSeries = subChart.addLineSeries({ color: '#00bcd4', lineWidth: 1.5, priceLineVisible: false });
+        atrSeries.setData(atrData);
+      }
+
+      if (indicators.includes('Stochastic')) {
+        const { kLine, dLine } = calcStochastic(candles);
+        const kSeries = subChart.addLineSeries({ color: '#2196f3', lineWidth: 1.5, priceLineVisible: false });
+        kSeries.setData(kLine);
+        const dSeries = subChart.addLineSeries({ color: '#ff9800', lineWidth: 1.5, priceLineVisible: false });
+        dSeries.setData(dLine);
+        const ob = subChart.addLineSeries({ color: 'rgba(239,83,80,0.4)', lineWidth: 1, lineStyle: 2, priceLineVisible: false });
+        const os = subChart.addLineSeries({ color: 'rgba(38,166,154,0.4)', lineWidth: 1, lineStyle: 2, priceLineVisible: false });
+        if (kLine.length) {
+          const t0 = kLine[0].time, t1 = kLine[kLine.length - 1].time;
+          ob.setData([{ time: t0, value: 80 }, { time: t1, value: 80 }]);
+          os.setData([{ time: t0, value: 20 }, { time: t1, value: 20 }]);
+        }
       }
 
       chart.timeScale().subscribeVisibleLogicalRangeChange(range => {
