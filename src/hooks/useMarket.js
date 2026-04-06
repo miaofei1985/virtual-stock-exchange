@@ -3,6 +3,7 @@ import { STOCKS, generateHistoricalData, TIMEFRAMES } from '../data/stocks';
 import { loadPortfolio, savePortfolio } from '../utils/auth';
 import { checkAlerts } from '../utils/alerts';
 import { useWebSocket } from './useWebSocket';
+import { api } from '../utils/api';
 
 const INITIAL_BALANCE = 100000;
 
@@ -221,6 +222,8 @@ export function useMarket(user) {
     setPendingOrders(prev => [...prev, order]);
     const label = type.replace('_', ' ').toUpperCase();
     addAlert(`📋 ${label} placed: ${qty} ${symbol} @ $${tp}`, 'success');
+    // Sync to backend
+    api.placePendingOrder(symbol, type, qty, tp).catch(() => {});
   }, [addAlert]);
 
   const cancelPendingOrder = useCallback((orderId) => {
@@ -229,6 +232,8 @@ export function useMarket(user) {
       if (order) addAlert(`🗑 Order cancelled: ${order.type.replace('_',' ').toUpperCase()} ${order.quantity} ${order.symbol}`, 'warning');
       return prev.filter(o => o.id !== orderId);
     });
+    // Sync to backend
+    api.cancelPendingOrder(orderId).catch(() => {});
   }, [addAlert]);
 
   const executeTrade = useCallback((symbol, side, quantity) => {
@@ -276,6 +281,10 @@ export function useMarket(user) {
       else positions[symbol] = { shares: newShares, avgCost: newAvgCost };
 
       const order = { id: Date.now(), time: new Date().toLocaleTimeString(), symbol, side, qty, price, total: +total.toFixed(2), realizedPnl };
+
+      // Sync trade to backend API
+      api.trade(symbol, side, qty, price).catch(() => {});
+
       return { ...prev, balance: +(prev.balance + balanceDelta).toFixed(2), positions, orders: [order, ...prev.orders].slice(0, 100) };
     });
   }, [addAlert]);
