@@ -32,7 +32,7 @@ export function generateHistoricalData(basePrice, volatility, count, intervalMs)
     const wickDown = Math.random() * changeRange * 0.5;
     const high = Math.max(open, close) + wickUp;
     const low = Math.min(open, close) - wickDown;
-    const volume = Math.floor(100000 + Math.random() * 900000);
+    const volume = Math.floor(10000 + Math.random() * 90000);
 
     candles.push({
       time,

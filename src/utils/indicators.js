@@ -99,7 +99,7 @@ export function calcVolume(candles) {
   return candles.map(c => ({
     time: c.time,
     value: c.volume,
-    color: c.close >= c.open ? 'rgba(38,166,154,0.6)' : 'rgba(239,83,80,0.6)',
+    color: c.close >= c.open ? 'rgba(38,166,154,0.35)' : 'rgba(239,83,80,0.35)',
   }));
 }
 

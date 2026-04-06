@@ -83,7 +83,12 @@ export default function Chart({ stock, timeframe, setTimeframe, theme }) {
     candleSeriesRef.current = candleSeries;
 
     if (indicators.includes('Volume')) {
-      const volSeries = chart.addHistogramSeries({ priceFormat: { type: 'volume' }, priceScaleId: 'vol', scaleMargins: { top: 0.8, bottom: 0 } });
+      const volSeries = chart.addHistogramSeries({
+        priceFormat: { type: 'volume' },
+        priceScaleId: 'vol',
+        scaleMargins: { top: 0.88, bottom: 0 },
+      });
+      chart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.88, bottom: 0 } });
       volSeries.setData(calcVolume(candles));
       seriesRefs.current['Volume'] = volSeries;
     }
