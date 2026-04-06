@@ -2,7 +2,14 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuid } from 'uuid';
+import { Resend } from 'resend';
 import db from './db.js';
+
+const resendApiKey = process.env.RESEND_API_KEY;
+const resend = resendApiKey ? new Resend(resendApiKey) : null;
+if (!resendApiKey) {
+  console.warn('⚠️  RESEND_API_KEY not set. Email verification will log codes to console.');
+}
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -191,9 +198,13 @@ router.delete('/alerts/:id', auth, (req, res) => {
 
 // ===== Email Verification =====
 
-router.post('/auth/send-code', (req, res) => {
+router.post('/auth/send-code', async (req, res) => {
   const { email } = req.body;
   if (!email || !email.includes('@')) return res.status(400).json({ error: 'Invalid email' });
+
+  // Rate limit: max 3 codes per 10 minutes
+  const recentCount = db.prepare("SELECT COUNT(*) as cnt FROM verification_codes WHERE email = ? AND created_at > unixepoch() - 600").get(email);
+  if (recentCount.cnt >= 3) return res.status(429).json({ error: 'Too many requests. Try again later.' });
 
   // Generate 6-digit code
   const code = String(Math.floor(100000 + Math.random() * 900000));
@@ -205,9 +216,44 @@ router.post('/auth/send-code', (req, res) => {
   // Store new code
   db.prepare('INSERT INTO verification_codes (email, code, expires_at) VALUES (?, ?, ?)').run(email, code, expiresAt);
 
-  // In development: log the code and return it
-  console.log(`📧 Verification code for ${email}: ${code}`);
-  res.json({ success: true, message: 'Code sent', dev_code: code });
+  // Send email via Resend
+  if (resend) {
+    try {
+      await resend.emails.send({
+        from: 'VSE <onboarding@resend.dev>',
+        to: [email],
+        subject: `Your VSE verification code: ${code}`,
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
+            <div style="text-align: center; margin-bottom: 32px;">
+              <span style="font-size: 28px; font-weight: 700; color: #f0b90b; letter-spacing: 2px;">VSE</span>
+              <div style="font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 3px; margin-top: 4px;">Virtual Stock Exchange</div>
+            </div>
+            <div style="background: #1a1a22; border: 1px solid #2a2a35; border-radius: 12px; padding: 32px; text-align: center;">
+              <div style="color: #e0e0e0; font-size: 15px; margin-bottom: 24px;">Your verification code:</div>
+              <div style="font-size: 36px; font-weight: 700; color: #26a69a; letter-spacing: 12px; font-family: 'SF Mono', 'Fira Code', monospace;">${code}</div>
+              <div style="color: #555; font-size: 13px; margin-top: 24px;">This code expires in 10 minutes.</div>
+              <div style="color: #555; font-size: 13px; margin-top: 8px;">If you didn't request this, you can safely ignore this email.</div>
+            </div>
+            <div style="text-align: center; color: #444; font-size: 11px; margin-top: 24px;">
+              Virtual Stock Exchange · Practice trading with zero risk
+            </div>
+          </div>
+        `,
+      });
+      console.log(`📧 Verification code sent to ${email}`);
+    } catch (err) {
+      console.error('Resend error:', err.message);
+      // Still return success so user can see dev_code fallback
+    }
+  } else {
+    console.log(`📧 [DEV] Verification code for ${email}: ${code}`);
+  }
+
+  const response = { success: true, message: 'Code sent' };
+  // In dev mode (no Resend key), include the code for testing
+  if (!resend) response.dev_code = code;
+  res.json(response);
 });
 
 router.post('/auth/verify-code', (req, res) => {
