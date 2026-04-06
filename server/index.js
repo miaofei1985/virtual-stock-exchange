@@ -74,14 +74,16 @@ setInterval(() => {
     if (order.type === 'stop_sell' && price <= order.trigger_price) triggered = true;
 
     if (triggered) {
-      db.prepare("UPDATE pending_orders SET status = 'filled' WHERE id = ?").run(order.id);
       const side = order.type.includes('buy') ? 'buy' : 'sell';
       const total = +(price * order.quantity).toFixed(2);
       const portfolio = db.prepare('SELECT * FROM portfolios WHERE user_id = ?').get(order.user_id);
       const position = db.prepare('SELECT * FROM positions WHERE user_id = ? AND symbol = ?').get(order.user_id, order.symbol) || { shares: 0, avg_cost: 0 };
 
+      // Validate before marking as filled
       if (side === 'buy' && total > portfolio.balance) return;
       if (side === 'sell' && position.shares < order.quantity) return;
+
+      db.prepare("UPDATE pending_orders SET status = 'filled' WHERE id = ?").run(order.id);
 
       let newShares, newAvgCost, balanceDelta, realizedPnl = 0;
 

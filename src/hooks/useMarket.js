@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { STOCKS, generateHistoricalData, TIMEFRAMES } from '../data/stocks';
 import { loadPortfolio, savePortfolio } from '../utils/auth';
-import { checkAlerts } from '../utils/alerts';
 import { useWebSocket } from './useWebSocket';
 import { api } from '../utils/api';
 
@@ -65,7 +64,6 @@ export function useMarket(user) {
   // Merge WebSocket market data into local stocks
   useEffect(() => {
     if (!wsStocks || wsStocks.length === 0) return;
-    const tfObj = TIMEFRAMES.find(t => t.label === timeframe) || TIMEFRAMES[5];
     setStocks(prev => prev.map(local => {
       const remote = wsStocks.find(s => s.symbol === local.symbol);
       if (!remote) return local;
@@ -158,15 +156,29 @@ export function useMarket(user) {
     });
   }, [stocks]);
 
-  // Check price alerts on each tick
+  // Poll server alerts: detect triggered ones by comparing with previous state
+  const prevAlertIdsRef = useRef(new Set());
   useEffect(() => {
     if (!userId) return;
-    const { triggered } = checkAlerts(userId, stocksRef.current);
-    triggered.forEach(a => {
-      const label = { above: '▲ Price Above', below: '▼ Price Below', stop_loss: '🛑 Stop Loss', take_profit: '🎯 Take Profit' }[a.type] || a.type;
-      addAlert(`${label} triggered: ${a.symbol} @ $${a.triggeredAt.toFixed(2)} (target $${a.price})`, a.type === 'stop_loss' ? 'error' : a.type === 'take_profit' ? 'success' : 'warning');
-    });
-  }, [stocks, userId]);
+    const checkAlertChanges = async () => {
+      try {
+        const activeAlerts = await api.getAlerts();
+        const currentIds = new Set(activeAlerts.map(a => a.id));
+        // Find alerts that were in previous list but are now gone (triggered by server)
+        if (prevAlertIdsRef.current.size > 0) {
+          for (const prevId of prevAlertIdsRef.current) {
+            if (!currentIds.has(prevId)) {
+              addAlert(`🔔 Price alert triggered!`, 'warning');
+            }
+          }
+        }
+        prevAlertIdsRef.current = currentIds;
+      } catch {}
+    };
+    checkAlertChanges();
+    const interval = setInterval(checkAlertChanges, 5000);
+    return () => clearInterval(interval);
+  }, [userId, addAlert]);
 
   // Check and execute pending limit/stop orders
   useEffect(() => {
