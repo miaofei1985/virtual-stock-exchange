@@ -32,7 +32,6 @@ export default function Watchlist({ stocks, selectedSymbol, setSelectedSymbol })
         s.sector.toLowerCase().includes(q)
       );
     }
-    // Sort: starred first, then by symbol
     return [...list].sort((a, b) => {
       const aStar = watchlist.includes(a.symbol) ? 0 : 1;
       const bStar = watchlist.includes(b.symbol) ? 0 : 1;
@@ -44,13 +43,13 @@ export default function Watchlist({ stocks, selectedSymbol, setSelectedSymbol })
   const placeholder = lang === 'zh' ? '搜索代码或名称...' : 'Search symbol or name...';
 
   return (
-    <div className="flex flex-col h-full bg-dark-800 border-r border-dark-500 relative">
-      <div className="px-3 py-2 border-b border-dark-500 text-xs text-gray-400 uppercase tracking-widest font-semibold">
+    <div className="flex flex-col h-full relative" style={{ background: 'var(--bg-secondary)', borderRight: '1px solid var(--border-color)' }}>
+      <div className="px-3 py-2 border-b text-xs uppercase tracking-widest font-semibold"
+        style={{ borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}>
         {t('marketWatch')}
       </div>
 
-      {/* Search input */}
-      <div className="px-2 py-1.5 border-b border-dark-600">
+      <div className="px-2 py-1.5 border-b" style={{ borderColor: 'var(--bg-hover)' }}>
         <input
           type="text"
           className="input-dark w-full text-xs"
@@ -58,15 +57,16 @@ export default function Watchlist({ stocks, selectedSymbol, setSelectedSymbol })
           value={search}
           onChange={e => setSearch(e.target.value)}
           style={{ padding: '4px 8px', fontSize: '11px' }}
+          aria-label={placeholder}
         />
       </div>
 
-      <div className="grid text-xs text-gray-500 px-2 py-1 border-b border-dark-600" style={{gridTemplateColumns:'2fr 1.5fr 1fr'}}>
+      <div className="grid text-xs px-2 py-1 border-b" style={{gridTemplateColumns:'2fr 1.5fr 1fr', color: 'var(--text-muted)', borderColor: 'var(--bg-hover)'}}>
         <span>{t('symbol')}</span><span className="text-right">{t('price')}</span><span className="text-right">{t('chgPct')}</span>
       </div>
       <div className="overflow-y-auto flex-1">
         {filtered.length === 0 ? (
-          <div className="text-center text-gray-600 py-8 text-xs">
+          <div className="text-center py-8 text-xs" style={{ color: 'var(--text-muted)' }}>
             {lang === 'zh' ? '未找到匹配的品种' : 'No matching symbols'}
           </div>
         ) : filtered.map(stock => {
@@ -80,17 +80,21 @@ export default function Watchlist({ stocks, selectedSymbol, setSelectedSymbol })
             <div key={stock.symbol}
               className={`ticker-row grid items-center px-2 py-1.5 ${flash} ${selectedSymbol === stock.symbol ? 'active' : ''}`}
               style={{gridTemplateColumns:'2fr 1.5fr 1fr'}}
-              onClick={() => setSelectedSymbol(stock.symbol)}>
+              onClick={() => setSelectedSymbol(stock.symbol)}
+              role="button"
+              tabIndex={0}
+              aria-label={`${stock.symbol} ${stock.name} $${stock.currentPrice.toFixed(2)}`}
+              onKeyDown={e => { if (e.key === 'Enter') setSelectedSymbol(stock.symbol); }}>
               <div className="flex items-center gap-1">
                 <button
                   onClick={(e) => toggleWatchlist(stock.symbol, e)}
-                  className="flex-shrink-0 w-4 h-4 flex items-center justify-center text-xs hover:scale-110 transition-transform"
-                  title={starred ? (lang === 'zh' ? '取消自选' : 'Remove from watchlist') : (lang === 'zh' ? '加入自选' : 'Add to watchlist')}>
+                  className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-xs hover:scale-110 transition-transform min-w-[44px] min-h-[44px]"
+                  aria-label={starred ? (lang === 'zh' ? '取消自选' : 'Remove from watchlist') : (lang === 'zh' ? '加入自选' : 'Add to watchlist')}>
                   {starred ? '⭐' : '☆'}
                 </button>
                 <div>
-                  <div className="text-xs font-semibold text-white">{stock.symbol}</div>
-                  <div className="text-gray-500 truncate" style={{fontSize:'9px', maxWidth:'80px'}} title={stock.name}>{stock.name}</div>
+                  <div className="text-xs font-semibold" style={{ color: 'var(--text-bright)' }}>{stock.symbol}</div>
+                  <div className="truncate" style={{fontSize:'9px', maxWidth:'80px', color: 'var(--text-muted)'}} title={stock.name}>{stock.name}</div>
                 </div>
               </div>
               <div className={`text-right text-xs font-mono font-semibold ${isUp ? 'price-up' : 'price-down'}`}>
@@ -104,7 +108,6 @@ export default function Watchlist({ stocks, selectedSymbol, setSelectedSymbol })
         })}
       </div>
 
-      {/* Toast */}
       {toast && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 px-3 py-1.5 rounded-md text-xs font-medium shadow-lg border transition-all"
           style={{

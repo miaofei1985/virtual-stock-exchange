@@ -9,10 +9,10 @@ export default function AlertsPanel({ userId, stocks, selectedSymbol, onClose, o
   const [error, setError] = useState('');
 
   const TYPE_LABELS = {
-    above: { label: t('priceAbove'), color: 'text-up', bg: 'bg-teal-900/30 border-teal-800' },
-    below: { label: t('priceBelow'), color: 'text-down', bg: 'bg-red-900/30 border-red-800' },
-    stop_loss: { label: t('stopLoss'), color: 'text-down', bg: 'bg-red-900/40 border-red-700' },
-    take_profit: { label: t('takeProfit'), color: 'text-up', bg: 'bg-teal-900/40 border-teal-700' },
+    above: { label: t('priceAbove'), color: 'price-up', bg: 'rgba(38,166,154,0.12)', border: 'rgba(38,166,154,0.3)' },
+    below: { label: t('priceBelow'), color: 'price-down', bg: 'rgba(239,83,80,0.12)', border: 'rgba(239,83,80,0.3)' },
+    stop_loss: { label: t('stopLoss'), color: 'price-down', bg: 'rgba(239,83,80,0.18)', border: 'rgba(239,83,80,0.4)' },
+    take_profit: { label: t('takeProfit'), color: 'price-up', bg: 'rgba(38,166,154,0.18)', border: 'rgba(38,166,154,0.4)' },
   };
 
   useEffect(() => {
@@ -51,21 +51,23 @@ export default function AlertsPanel({ userId, stocks, selectedSymbol, onClose, o
   const stock = stocks.find(s => s.symbol === form.symbol);
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <div className="bg-dark-800 border border-dark-400 rounded-xl w-full max-w-lg shadow-2xl flex flex-col max-h-[85vh]">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-dark-500">
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: 'rgba(0,0,0,0.8)' }}>
+      <div className="rounded-xl w-full max-w-lg shadow-2xl flex flex-col max-h-[85vh]"
+        style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+        <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
           <div>
-            <div className="text-white font-bold">🔔 {t('priceAlertsStopLoss')}</div>
-            <div className="text-gray-500 text-xs mt-0.5">{t('getNotified')}</div>
+            <div className="font-bold" style={{ color: 'var(--text-bright)' }}>🔔 {t('priceAlertsStopLoss')}</div>
+            <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{t('getNotified')}</div>
           </div>
-          <button onClick={onClose} className="text-gray-500 hover:text-white text-xl px-2">✕</button>
+          <button onClick={onClose} className="text-xl px-2 min-w-[44px] min-h-[44px] flex items-center justify-center"
+            style={{ color: 'var(--text-muted)' }} aria-label="Close">✕</button>
         </div>
 
-        <form onSubmit={handleAdd} className="px-5 py-4 border-b border-dark-600 bg-dark-700/50">
-          <div className="text-xs text-gray-400 uppercase tracking-wider mb-3">{t('newAlert')}</div>
+        <form onSubmit={handleAdd} className="px-5 py-4 border-b" style={{ borderColor: 'var(--bg-hover)', background: 'rgba(26,26,34,0.5)' }}>
+          <div className="text-xs uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>{t('newAlert')}</div>
           <div className="grid grid-cols-2 gap-2 mb-2">
             <div>
-              <label className="text-xs text-gray-500 block mb-1">{t('symbol')}</label>
+              <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>{t('symbol')}</label>
               <select className="input-dark" value={form.symbol}
                 onChange={e => setForm(f => ({ ...f, symbol: e.target.value }))}>
                 {stocks.map(s => (
@@ -74,7 +76,7 @@ export default function AlertsPanel({ userId, stocks, selectedSymbol, onClose, o
               </select>
             </div>
             <div>
-              <label className="text-xs text-gray-500 block mb-1">{t('alertType')}</label>
+              <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>{t('alertType')}</label>
               <select className="input-dark" value={form.type}
                 onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
                 <option value="above">{t('priceAbove')}</option>
@@ -86,27 +88,27 @@ export default function AlertsPanel({ userId, stocks, selectedSymbol, onClose, o
           </div>
           <div className="grid grid-cols-2 gap-2 mb-2">
             <div>
-              <label className="text-xs text-gray-500 block mb-1">
+              <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>
                 {t('targetPrice')}
-                {stock && <span className="text-gray-600 ml-1">({t('now')} ${stock.currentPrice.toFixed(2)})</span>}
+                {stock && <span style={{ color: 'var(--text-muted)', opacity: 0.6 }}> ({t('now')} ${stock.currentPrice.toFixed(2)})</span>}
               </label>
               <input className="input-dark" type="number" step="0.01" min="0.01"
                 placeholder="0.00" value={form.price}
                 onChange={e => setForm(f => ({ ...f, price: e.target.value }))} />
             </div>
             <div>
-              <label className="text-xs text-gray-500 block mb-1">{t('note')}</label>
+              <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>{t('note')}</label>
               <input className="input-dark" placeholder={t('supportLevel')}
                 value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} />
             </div>
           </div>
-          {error && <div className="text-down text-xs mb-2">{error}</div>}
+          {error && <div className="price-down text-xs mb-2">{error}</div>}
           <button type="submit" className="btn-buy text-xs py-1.5 px-4">{t('addAlert')}</button>
         </form>
 
         <div className="overflow-y-auto flex-1 px-5 py-3">
           {alerts.length === 0 ? (
-            <div className="text-center text-gray-600 py-8 text-sm">{t('noAlerts')}</div>
+            <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>{t('noAlerts')}</div>
           ) : (
             <div className="flex flex-col gap-2">
               {alerts.map(a => {
@@ -114,19 +116,22 @@ export default function AlertsPanel({ userId, stocks, selectedSymbol, onClose, o
                 const triggered = a.triggered || a.active === 0;
                 return (
                   <div key={a.id}
-                    className={`flex items-start justify-between p-3 rounded-lg border text-xs ${meta.bg} ${triggered ? 'opacity-50' : ''}`}>
+                    className="flex items-start justify-between p-3 rounded-lg text-xs"
+                    style={{ background: meta.bg, border: `1px solid ${meta.border}`, opacity: triggered ? 0.5 : 1 }}>
                     <div>
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="font-bold text-white">{a.symbol}</span>
+                        <span className="font-bold" style={{ color: 'var(--text-bright)' }}>{a.symbol}</span>
                         <span className={`font-semibold ${meta.color}`}>{meta.label}</span>
-                        <span className="font-mono text-white font-bold">${a.price.toFixed(2)}</span>
+                        <span className="font-mono font-bold" style={{ color: 'var(--text-bright)' }}>${a.price.toFixed(2)}</span>
                         {triggered && <span className="text-yellow-400">{t('triggered')}</span>}
                       </div>
-                      {a.note && <div className="text-gray-400">{a.note}</div>}
+                      {a.note && <div style={{ color: 'var(--text-secondary)' }}>{a.note}</div>}
                     </div>
                     {!triggered && (
                       <button onClick={() => handleDelete(a.id)}
-                        className="text-gray-600 hover:text-down ml-3 mt-0.5 text-base leading-none">×</button>
+                        className="ml-3 mt-0.5 text-base leading-none min-w-[44px] min-h-[44px] flex items-center justify-center"
+                        style={{ color: 'var(--text-muted)' }}
+                        aria-label={`Delete alert for ${a.symbol}`}>×</button>
                     )}
                   </div>
                 );

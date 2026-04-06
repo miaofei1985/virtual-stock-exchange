@@ -23,7 +23,7 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS portfolios (
     user_id TEXT PRIMARY KEY REFERENCES users(id),
-    balance REAL DEFAULT 100000,
+    balance REAL DEFAULT 1000000,
     equity REAL DEFAULT 100000,
     total_pnl REAL DEFAULT 0,
     updated_at INTEGER DEFAULT (unixepoch())

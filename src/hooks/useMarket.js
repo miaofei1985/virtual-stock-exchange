@@ -29,18 +29,21 @@ function initPortfolio(userId) {
   return { balance: INITIAL_BALANCE, positions: {}, orders: [], pnl: 0 };
 }
 
+export { INITIAL_BALANCE };
+
 export function useMarket(user) {
   const userId = user?.id;
   const [stocks, setStocks] = useState(initMarket);
   const [selectedSymbol, setSelectedSymbol] = useState('AAPL');
   const [timeframe, setTimeframe] = useState('1D');
   const [portfolio, setPortfolio] = useState(() => initPortfolio(userId));
-  const [alerts, setAlerts] = useState([]);  // toast notifications
+  const [alerts, setAlerts] = useState([]);
   const [pendingOrders, setPendingOrders] = useState([]);
   const stocksRef = useRef(stocks);
   stocksRef.current = stocks;
   const portfolioRef = useRef(portfolio);
   portfolioRef.current = portfolio;
+  const addAlertRef = useRef(null);
 
   // WebSocket connection
   const { connected: wsConnected, stocks: wsStocks } = useWebSocket();
@@ -67,7 +70,6 @@ export function useMarket(user) {
     setStocks(prev => prev.map(local => {
       const remote = wsStocks.find(s => s.symbol === local.symbol);
       if (!remote) return local;
-      // Update candle history with latest price
       const updatedHistory = { ...local.history };
       if (updatedHistory[timeframe]?.length > 0) {
         const candles = [...updatedHistory[timeframe]];
@@ -96,7 +98,7 @@ export function useMarket(user) {
 
   // Market tick (fallback when WebSocket disconnected)
   useEffect(() => {
-    if (wsConnected) return; // use server data when connected
+    if (wsConnected) return;
     const tfObj = TIMEFRAMES.find(t => t.label === timeframe) || TIMEFRAMES[5];
     const interval = setInterval(() => {
       setStocks(prev => prev.map(s => {
@@ -156,6 +158,15 @@ export function useMarket(user) {
     });
   }, [stocks]);
 
+  const addAlert = useCallback((msg, type = 'success') => {
+    const id = Date.now() + Math.random();
+    setAlerts(prev => [...prev, { id, msg, type }]);
+    setTimeout(() => setAlerts(prev => prev.filter(a => a.id !== id)), 4000);
+  }, []);
+
+  // Keep ref current for use in effects
+  addAlertRef.current = addAlert;
+
   // Poll server alerts: detect triggered ones by comparing with previous state
   const prevAlertIdsRef = useRef(new Set());
   useEffect(() => {
@@ -164,11 +175,10 @@ export function useMarket(user) {
       try {
         const activeAlerts = await api.getAlerts();
         const currentIds = new Set(activeAlerts.map(a => a.id));
-        // Find alerts that were in previous list but are now gone (triggered by server)
         if (prevAlertIdsRef.current.size > 0) {
           for (const prevId of prevAlertIdsRef.current) {
             if (!currentIds.has(prevId)) {
-              addAlert(`🔔 Price alert triggered!`, 'warning');
+              addAlertRef.current?.(`🔔 Price alert triggered!`, 'warning');
             }
           }
         }
@@ -178,33 +188,28 @@ export function useMarket(user) {
     checkAlertChanges();
     const interval = setInterval(checkAlertChanges, 5000);
     return () => clearInterval(interval);
-  }, [userId, addAlert]);
+  }, [userId]);
 
-  // Check and execute pending limit/stop orders
+  // Backend handles pending order execution — frontend only displays them
   useEffect(() => {
-    setPendingOrders(prev => {
-      const remaining = [];
-      prev.forEach(order => {
-        const stock = stocksRef.current.find(s => s.symbol === order.symbol);
-        if (!stock) { remaining.push(order); return; }
-        const price = stock.currentPrice;
-        let triggered = false;
-        if (order.type === 'limit_buy' && price <= order.triggerPrice) triggered = true;
-        if (order.type === 'limit_sell' && price >= order.triggerPrice) triggered = true;
-        if (order.type === 'stop_buy' && price >= order.triggerPrice) triggered = true;
-        if (order.type === 'stop_sell' && price <= order.triggerPrice) triggered = true;
-        if (triggered) {
-          const side = order.type.includes('buy') ? 'buy' : 'sell';
-          executeTrade(order.symbol, side, order.quantity);
-          const label = order.type.replace('_', ' ').toUpperCase();
-          addAlert(`📋 ${label} filled: ${order.quantity} ${order.symbol} @ $${price.toFixed(2)}`, 'success');
-        } else {
-          remaining.push(order);
-        }
-      });
-      return remaining;
-    });
-  }, [stocks]);
+    if (!userId) return;
+    const syncPendingOrders = async () => {
+      try {
+        const serverOrders = await api.getPendingOrders();
+        setPendingOrders(serverOrders.map(o => ({
+          id: o.id,
+          symbol: o.symbol,
+          type: o.type,
+          quantity: o.quantity,
+          triggerPrice: o.trigger_price,
+          time: new Date(o.created_at * 1000).toLocaleTimeString(),
+        })));
+      } catch {}
+    };
+    syncPendingOrders();
+    const interval = setInterval(syncPendingOrders, 3000);
+    return () => clearInterval(interval);
+  }, [userId]);
 
   // Auto-save portfolio
   useEffect(() => {
@@ -220,33 +225,33 @@ export function useMarket(user) {
     return () => clearTimeout(timer);
   }, [portfolio, userId]);
 
-  const addAlert = useCallback((msg, type = 'success') => {
-    const id = Date.now() + Math.random();
-    setAlerts(prev => [...prev, { id, msg, type }]);
-    setTimeout(() => setAlerts(prev => prev.filter(a => a.id !== id)), 4000);
-  }, []);
-
-  const placePendingOrder = useCallback((symbol, type, quantity, triggerPrice) => {
+  const placePendingOrder = useCallback(async (symbol, type, quantity, triggerPrice) => {
     const qty = parseFloat(quantity);
     const tp = parseFloat(triggerPrice);
     if (!qty || qty <= 0 || !tp || tp <= 0) { addAlert('Invalid order parameters', 'error'); return; }
-    const order = { id: Date.now(), symbol, type, quantity: qty, triggerPrice: tp, time: new Date().toLocaleTimeString() };
-    setPendingOrders(prev => [...prev, order]);
-    const label = type.replace('_', ' ').toUpperCase();
-    addAlert(`📋 ${label} placed: ${qty} ${symbol} @ $${tp}`, 'success');
-    // Sync to backend
-    api.placePendingOrder(symbol, type, qty, tp).catch(() => {});
+    try {
+      await api.placePendingOrder(symbol, type, qty, tp);
+      const label = type.replace('_', ' ').toUpperCase();
+      addAlert(`📋 ${label} placed: ${qty} ${symbol} @ $${tp}`, 'success');
+      // Refresh from server
+      const serverOrders = await api.getPendingOrders();
+      setPendingOrders(serverOrders.map(o => ({
+        id: o.id, symbol: o.symbol, type: o.type, quantity: o.quantity,
+        triggerPrice: o.trigger_price, time: new Date(o.created_at * 1000).toLocaleTimeString(),
+      })));
+    } catch (err) {
+      addAlert(`Failed to place order: ${err.message}`, 'error');
+    }
   }, [addAlert]);
 
-  const cancelPendingOrder = useCallback((orderId) => {
-    setPendingOrders(prev => {
-      const order = prev.find(o => o.id === orderId);
-      if (order) addAlert(`🗑 Order cancelled: ${order.type.replace('_',' ').toUpperCase()} ${order.quantity} ${order.symbol}`, 'warning');
-      return prev.filter(o => o.id !== orderId);
-    });
-    // Sync to backend
-    api.cancelPendingOrder(orderId).catch(() => {});
-  }, [addAlert]);
+  const cancelPendingOrder = useCallback(async (orderId) => {
+    const order = pendingOrders.find(o => o.id === orderId);
+    if (order) addAlert(`🗑 Order cancelled: ${order.type?.replace('_',' ').toUpperCase()} ${order.quantity} ${order.symbol}`, 'warning');
+    try {
+      await api.cancelPendingOrder(orderId);
+      setPendingOrders(prev => prev.filter(o => o.id !== orderId));
+    } catch {}
+  }, [addAlert, pendingOrders]);
 
   const executeTrade = useCallback((symbol, side, quantity) => {
     const qty = parseFloat(quantity);

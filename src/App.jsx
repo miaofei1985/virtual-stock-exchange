@@ -66,10 +66,14 @@ export default function App() {
           <div className="w-px h-4" style={{ background: 'var(--border-color)' }} />
           <div className="pulse-dot" />
           <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('live')}</span>
-          <button className="md:hidden text-xs px-2 py-0.5 rounded" style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)' }}
-            onClick={() => setSidebarOpen(v => !v)}>☰</button>
-          <button className="lg:hidden text-xs px-2 py-0.5 rounded" style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)' }}
-            onClick={() => setRightPanelOpen(v => !v)}>⊞</button>
+          <button className="md:hidden text-xs px-2 py-0.5 rounded min-w-[44px] min-h-[44px] flex items-center justify-center"
+            style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)' }}
+            onClick={() => setSidebarOpen(v => !v)}
+            aria-label="Toggle watchlist">☰</button>
+          <button className="lg:hidden text-xs px-2 py-0.5 rounded min-w-[44px] min-h-[44px] flex items-center justify-center"
+            style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)' }}
+            onClick={() => setRightPanelOpen(v => !v)}
+            aria-label="Toggle order panel">⊞</button>
         </div>
 
         {selectedStock && (
@@ -94,36 +98,40 @@ export default function App() {
             </span>
           </span>
 
-          {/* Language toggle */}
           <button onClick={toggleLang}
-            className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all font-bold"
+            className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all font-bold min-w-[44px] min-h-[44px]"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
-            title={lang === 'en' ? '切换到中文' : 'Switch to English'}>
+            title={lang === 'en' ? '切换到中文' : 'Switch to English'}
+            aria-label={lang === 'en' ? '切换到中文' : 'Switch to English'}>
             {lang === 'en' ? '中' : 'EN'}
           </button>
 
           <button onClick={toggleTheme}
-            className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all"
+            className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all min-w-[44px] min-h-[44px]"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
-            title={theme === 'dark' ? t('switchToLight') : t('switchToDark')}>
+            title={theme === 'dark' ? t('switchToLight') : t('switchToDark')}
+            aria-label={theme === 'dark' ? t('switchToLight') : t('switchToDark')}>
             {theme === 'dark' ? '🌙' : '☀️'}
           </button>
 
           <button onClick={() => setShowAlerts(true)}
-            className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all"
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
+            className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all min-w-[44px] min-h-[44px]"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
+            aria-label={t('alerts')}>
             🔔
           </button>
 
           <button onClick={() => setShowLeaderboard(true)}
-            className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all"
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
+            className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all min-w-[44px] min-h-[44px]"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
+            aria-label={t('leaderboard')}>
             🏅
           </button>
 
           <button onClick={() => setShowCompetition(true)}
-            className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hidden sm:flex"
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
+            className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hidden sm:flex min-w-[44px] min-h-[44px]"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
+            aria-label={t('competition')}>
             🏆
           </button>
 
@@ -131,8 +139,10 @@ export default function App() {
             <div className="relative">
               <button
                 onClick={e => { e.stopPropagation(); setUserMenuOpen(v => !v); }}
-                className="flex items-center gap-1.5 px-2 py-1 rounded transition-all"
-                style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}>
+                className="flex items-center gap-1.5 px-2 py-1 rounded transition-all min-h-[44px]"
+                style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}
+                aria-label={`${user.username} menu`}
+                aria-expanded={userMenuOpen}>
                 <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold overflow-hidden"
                   style={{ background: 'rgba(38,166,154,0.3)', color: 'var(--up-color)' }}>
                   {user.avatar
@@ -145,22 +155,23 @@ export default function App() {
 
               {userMenuOpen && (
                 <div className="absolute right-0 top-full mt-1 rounded-lg shadow-xl z-50 w-44 py-1 fade-in"
-                  style={{ background: 'var(--bg-panel)', border: '1px solid var(--border-color)' }}>
+                  style={{ background: 'var(--bg-panel)', border: '1px solid var(--border-color)' }}
+                  role="menu">
                   <div className="px-3 py-2" style={{ borderBottom: '1px solid var(--bg-hover)' }}>
                     <div className="text-xs font-bold" style={{ color: 'var(--text-bright)' }}>{user.username}</div>
                     <div className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{user.email}</div>
                   </div>
                   <button onClick={() => { setShowCompetition(true); setUserMenuOpen(false); }}
-                    className="w-full text-left px-3 py-2 text-xs hover:bg-dark-600" style={{ color: 'var(--text-secondary)' }}>
+                    className="w-full text-left px-3 py-2 text-xs" style={{ color: 'var(--text-secondary)' }} role="menuitem">
                     🏆 {t('competition')}
                   </button>
                   <button onClick={() => { setShowAlerts(true); setUserMenuOpen(false); }}
-                    className="w-full text-left px-3 py-2 text-xs hover:bg-dark-600" style={{ color: 'var(--text-secondary)' }}>
+                    className="w-full text-left px-3 py-2 text-xs" style={{ color: 'var(--text-secondary)' }} role="menuitem">
                     {t('myAlerts')}
                   </button>
                   <div style={{ borderTop: '1px solid var(--bg-hover)', marginTop: '4px' }} />
                   <button onClick={handleLogout}
-                    className="w-full text-left px-3 py-2 text-xs" style={{ color: 'var(--down-color)' }}>
+                    className="w-full text-left px-3 py-2 text-xs" style={{ color: 'var(--down-color)' }} role="menuitem">
                     {t('signOut')}
                   </button>
                 </div>

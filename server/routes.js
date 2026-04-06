@@ -5,14 +5,18 @@ import { v4 as uuid } from 'uuid';
 import db from './db.js';
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'vse-dev-secret-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('⚠️  WARNING: JWT_SECRET not set. Using development fallback. Set JWT_SECRET env var in production!');
+}
+const jwtSecret = JWT_SECRET || 'vse-dev-secret-DO-NOT-USE-IN-PRODUCTION';
 
 // Auth middleware
 export function auth(req, res, next) {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'No token' });
   try {
-    req.user = jwt.verify(token, JWT_SECRET);
+    req.user = jwt.verify(token, jwtSecret);
     next();
   } catch { res.status(401).json({ error: 'Invalid token' }); }
 }
@@ -22,6 +26,7 @@ export function auth(req, res, next) {
 router.post('/auth/register', (req, res) => {
   const { username, email, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
+  if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
 
   const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
   if (existing) return res.status(409).json({ error: 'Username taken' });
@@ -31,7 +36,7 @@ router.post('/auth/register', (req, res) => {
   db.prepare('INSERT INTO users (id, username, email, password_hash) VALUES (?, ?, ?, ?)').run(id, username, email, hash);
   db.prepare('INSERT INTO portfolios (user_id) VALUES (?)').run(id);
 
-  const token = jwt.sign({ id, username }, JWT_SECRET, { expiresIn: '30d' });
+  const token = jwt.sign({ id, username }, jwtSecret, { expiresIn: '30d' });
   res.json({ token, user: { id, username, email } });
 });
 
@@ -41,7 +46,7 @@ router.post('/auth/login', (req, res) => {
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
-  const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '30d' });
+  const token = jwt.sign({ id: user.id, username: user.username }, jwtSecret, { expiresIn: '30d' });
   res.json({ token, user: { id: user.id, username: user.username, email: user.email } });
 });
 
@@ -140,6 +145,19 @@ router.post('/competitions', auth, (req, res) => {
   db.prepare('INSERT INTO competition_participants (competition_id, user_id, starting_balance, equity) VALUES (?, ?, ?, ?)')
     .run(id, req.user.id, startBalance || 1000000, startBalance || 1000000);
   res.json({ id, success: true });
+});
+
+router.delete('/competitions/:id', auth, (req, res) => {
+  const comp = db.prepare('SELECT * FROM competitions WHERE id = ?').get(req.params.id);
+  if (!comp) return res.status(404).json({ error: 'Competition not found' });
+  if (comp.creator_id !== req.user.id) return res.status(403).json({ error: 'Only creator can delete' });
+
+  const tx = db.transaction(() => {
+    db.prepare('DELETE FROM competition_participants WHERE competition_id = ?').run(req.params.id);
+    db.prepare('DELETE FROM competitions WHERE id = ?').run(req.params.id);
+  });
+  tx();
+  res.json({ success: true });
 });
 
 router.post('/competitions/:id/join', auth, (req, res) => {

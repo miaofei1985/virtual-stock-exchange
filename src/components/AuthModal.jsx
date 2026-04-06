@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { loginOAuth, saveSession } from '../utils/auth';
+import { saveSession } from '../utils/auth';
 import { api } from '../utils/api';
 import { useLang } from '../i18n/LanguageContext';
 
@@ -18,6 +18,13 @@ const GoogleIcon = () => (
   </svg>
 );
 
+function generateRandomUsername(provider) {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let suffix = '';
+  for (let i = 0; i < 6; i++) suffix += chars[Math.floor(Math.random() * chars.length)];
+  return `${provider}_${suffix}`;
+}
+
 export default function AuthModal({ onAuth }) {
   const { t } = useLang();
   const [mode, setMode] = useState('login');
@@ -35,7 +42,7 @@ export default function AuthModal({ onAuth }) {
       if (mode === 'register') {
         data = await api.register(username, email, password);
       } else {
-        data = await api.login(username || email.split('@')[0], password);
+        data = await api.login(username, password);
       }
       saveSession(data.user);
       onAuth(data.user);
@@ -44,75 +51,89 @@ export default function AuthModal({ onAuth }) {
     }
   };
 
-  const handleOAuth = (provider) => {
+  const handleOAuth = async (provider) => {
     setLoading(provider);
     setError('');
-    setTimeout(() => {
+    try {
+      const randomUsername = generateRandomUsername(provider);
+      const randomPassword = Math.random().toString(36).slice(2, 10);
+      const mockEmail = `${randomUsername}@${provider}.sim`;
+      const data = await api.register(randomUsername, mockEmail, randomPassword);
+      saveSession(data.user);
+      onAuth(data.user);
+    } catch (err) {
+      // If username taken, retry once
       try {
-        const user = loginOAuth(provider);
-        onAuth(user);
-      } catch (err) {
-        setError(err.message);
+        const retryUsername = generateRandomUsername(provider);
+        const retryPassword = Math.random().toString(36).slice(2, 10);
+        const retryEmail = `${retryUsername}@${provider}.sim`;
+        const data = await api.register(retryUsername, retryEmail, retryPassword);
+        saveSession(data.user);
+        onAuth(data.user);
+      } catch (err2) {
+        setError(err2.message);
         setLoading('');
       }
-    }, 800);
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
-      <div className="bg-dark-800 border border-dark-400 rounded-xl w-full max-w-sm shadow-2xl">
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4"
+      style={{ background: 'rgba(0,0,0,0.9)' }}>
+      <div className="rounded-xl w-full max-w-sm shadow-2xl"
+        style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
         <div className="px-6 pt-8 pb-4 text-center">
-          <div className="text-3xl font-bold text-gold tracking-wider mb-1">{t('vse')}</div>
-          <div className="text-gray-400 text-xs tracking-widest uppercase">{t('vseFullName')}</div>
-          <div className="mt-4 text-white font-semibold">
+          <div className="text-3xl font-bold tracking-wider mb-1 text-gold">{t('vse')}</div>
+          <div className="text-xs tracking-widest uppercase" style={{ color: 'var(--text-secondary)' }}>{t('vseFullName')}</div>
+          <div className="mt-4 font-semibold" style={{ color: 'var(--text-bright)' }}>
             {mode === 'login' ? t('signInToTrade') : t('createAccount')}
           </div>
         </div>
 
         <div className="px-6 flex flex-col gap-2">
-          <button onClick={() => handleOAuth('google')} disabled={!!loading}
-            className="flex items-center justify-center gap-2.5 w-full py-2.5 bg-dark-700 border border-dark-400 hover:border-gray-500 rounded-lg text-sm text-white transition-all disabled:opacity-50">
+          <button onClick={() => handleOAuth('google')} disabled={!!loading} aria-label={t('continueWithGoogle')}
+            className="flex items-center justify-center gap-2.5 w-full py-2.5 rounded-lg text-sm transition-all disabled:opacity-50 min-h-[44px]"
+            style={{ background: 'var(--bg-panel)', border: '1px solid var(--border-color)', color: 'var(--text-bright)' }}>
             {loading === 'google' ? <span className="animate-spin text-xs">⟳</span> : <GoogleIcon />}
             {t('continueWithGoogle')}
           </button>
-          <button onClick={() => handleOAuth('github')} disabled={!!loading}
-            className="flex items-center justify-center gap-2.5 w-full py-2.5 bg-dark-700 border border-dark-400 hover:border-gray-500 rounded-lg text-sm text-white transition-all disabled:opacity-50">
+          <button onClick={() => handleOAuth('github')} disabled={!!loading} aria-label={t('continueWithGitHub')}
+            className="flex items-center justify-center gap-2.5 w-full py-2.5 rounded-lg text-sm transition-all disabled:opacity-50 min-h-[44px]"
+            style={{ background: 'var(--bg-panel)', border: '1px solid var(--border-color)', color: 'var(--text-bright)' }}>
             {loading === 'github' ? <span className="animate-spin text-xs">⟳</span> : <GithubIcon />}
             {t('continueWithGitHub')}
           </button>
         </div>
 
         <div className="flex items-center gap-3 px-6 my-4">
-          <div className="flex-1 h-px bg-dark-400" />
-          <span className="text-xs text-gray-500">{t('or')}</span>
-          <div className="flex-1 h-px bg-dark-400" />
+          <div className="flex-1 h-px" style={{ background: 'var(--border-color)' }} />
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('or')}</span>
+          <div className="flex-1 h-px" style={{ background: 'var(--border-color)' }} />
         </div>
 
         <form onSubmit={handleEmail} className="px-6 flex flex-col gap-3">
-          {mode === 'register' && (
-            <input className="input-dark" placeholder={t('username')} value={username}
-              onChange={e => setUsername(e.target.value)} required minLength={2} />
-          )}
-          {mode === 'login' && (
-            <input className="input-dark" placeholder={t('username')} value={username}
-              onChange={e => setUsername(e.target.value)} required />
-          )}
+          <input className="input-dark" placeholder={t('username')} value={username}
+            onChange={e => setUsername(e.target.value)} required minLength={2}
+            aria-label={t('username')} />
           {mode === 'register' && (
             <input className="input-dark" type="email" placeholder={t('emailAddress')} value={email}
-              onChange={e => setEmail(e.target.value)} required />
+              onChange={e => setEmail(e.target.value)} required
+              aria-label={t('emailAddress')} />
           )}
           <input className="input-dark" type="password" placeholder={t('password')} value={password}
-            onChange={e => setPassword(e.target.value)} required minLength={6} />
+            onChange={e => setPassword(e.target.value)} required minLength={6}
+            aria-label={t('password')} />
 
           {error && <div className="text-down text-xs text-center">{error}</div>}
 
           <button type="submit"
-            className="w-full py-2.5 bg-up hover:bg-teal-500 text-white rounded-lg text-sm font-bold transition-all">
+            className="w-full py-2.5 text-white rounded-lg text-sm font-bold transition-all min-h-[44px]"
+            style={{ background: 'var(--up-color)' }}>
             {mode === 'login' ? t('signIn') : t('createAccount')}
           </button>
         </form>
 
-        <div className="px-6 py-5 text-center text-xs text-gray-500">
+        <div className="px-6 py-5 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
           {mode === 'login' ? (
             <>{t('noAccount')} <button className="text-up hover:underline" onClick={() => { setMode('register'); setError(''); }}>{t('register')}</button></>
           ) : (
@@ -120,7 +141,7 @@ export default function AuthModal({ onAuth }) {
           )}
         </div>
 
-        <div className="px-6 pb-4 text-center text-xs text-gray-600">
+        <div className="px-6 pb-4 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
           {t('startWith')}
         </div>
       </div>

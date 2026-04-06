@@ -6,30 +6,33 @@ export default function PendingOrders({ orders, onCancel }) {
   if (orders.length === 0) return null;
 
   const typeLabels = {
-    limit_buy: { label: t('limitBuy'), color: 'text-up' },
-    limit_sell: { label: t('limitSell'), color: 'text-down' },
-    stop_buy: { label: t('stopBuy'), color: 'text-up' },
-    stop_sell: { label: t('stopSell'), color: 'text-down' },
+    limit_buy: { label: t('limitBuy'), color: 'price-up' },
+    limit_sell: { label: t('limitSell'), color: 'price-down' },
+    stop_buy: { label: t('stopBuy'), color: 'price-up' },
+    stop_sell: { label: t('stopSell'), color: 'price-down' },
   };
 
   return (
-    <div className="border-t border-dark-500 bg-dark-800">
-      <div className="px-3 py-1.5 text-xs text-gray-400 uppercase tracking-widest font-semibold border-b border-dark-600 flex items-center justify-between">
+    <div style={{ borderTop: '1px solid var(--border-color)', background: 'var(--bg-secondary)' }}>
+      <div className="px-3 py-1.5 text-xs uppercase tracking-widest font-semibold border-b flex items-center justify-between"
+        style={{ color: 'var(--text-muted)', borderColor: 'var(--bg-hover)' }}>
         <span>{t('pendingOrders')} ({orders.length})</span>
       </div>
       <div className="max-h-40 overflow-auto">
         {orders.map(o => {
-          const info = typeLabels[o.type] || { label: o.type, color: 'text-gray-400' };
+          const info = typeLabels[o.type] || { label: o.type, color: '' };
           return (
-            <div key={o.id} className="flex items-center justify-between px-3 py-1.5 border-b border-dark-700 hover:bg-dark-700 text-xs">
+            <div key={o.id} className="flex items-center justify-between px-3 py-1.5 border-b text-xs"
+              style={{ borderColor: 'var(--bg-surface)' }}>
               <div className="flex items-center gap-2">
                 <span className={`font-bold ${info.color}`}>{info.label}</span>
-                <span className="text-white font-bold">{o.symbol}</span>
+                <span style={{ color: 'var(--text-bright)' }} className="font-bold">{o.symbol}</span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-gray-400 font-mono">{o.quantity} @ ${o.triggerPrice.toFixed(2)}</span>
+                <span className="font-mono" style={{ color: 'var(--text-secondary)' }}>{o.quantity} @ ${o.triggerPrice.toFixed(2)}</span>
                 <button onClick={() => onCancel(o.id)}
-                  className="text-down hover:text-red-300 px-1" title={t('orderCancelled')}>✕</button>
+                  className="price-down hover:opacity-80 px-2 py-1 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  aria-label={`${t('orderCancelled')}: ${o.type} ${o.symbol}`}>✕</button>
               </div>
             </div>
           );

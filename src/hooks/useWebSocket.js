@@ -1,7 +1,9 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 
 const WS_URL = process.env.REACT_APP_WS_URL ||
-  (window.location.protocol === 'https:' ? `wss://${window.location.host}` : `ws://${window.location.hostname}:3001`);
+  (window.location.protocol === 'https:'
+    ? `wss://${window.location.host}`
+    : `ws://${window.location.host}`);
 
 export function useWebSocket() {
   const wsRef = useRef(null);
@@ -33,7 +35,6 @@ export function useWebSocket() {
       ws.onclose = () => {
         setConnected(false);
         wsRef.current = null;
-        // Auto-reconnect after 3s
         reconnectTimer.current = setTimeout(connect, 3000);
       };
 

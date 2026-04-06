@@ -18,19 +18,20 @@ export default function Portfolio({ portfolio, stocks }) {
   const totalPnl = portfolio.pnl;
 
   return (
-    <div className="flex flex-col h-full bg-dark-800">
-      <div className="px-3 py-2 border-b border-dark-500 flex items-center justify-between flex-wrap gap-2">
+    <div className="flex flex-col h-full" style={{ background: 'var(--bg-secondary)' }}>
+      <div className="px-3 py-2 border-b flex items-center justify-between flex-wrap gap-2"
+        style={{ borderColor: 'var(--border-color)' }}>
         <div className="flex gap-4">
           <div>
-            <div className="text-xs text-gray-500">{t('totalEquity')}</div>
-            <div className="text-sm font-mono font-bold text-white">${totalValue.toLocaleString(undefined, {maximumFractionDigits:2})}</div>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('totalEquity')}</div>
+            <div className="text-sm font-mono font-bold" style={{ color: 'var(--text-bright)' }}>${totalValue.toLocaleString(undefined, {maximumFractionDigits:2})}</div>
           </div>
           <div>
-            <div className="text-xs text-gray-500">{t('cash2')}</div>
-            <div className="text-sm font-mono text-white">${portfolio.balance.toLocaleString()}</div>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('cash2')}</div>
+            <div className="text-sm font-mono" style={{ color: 'var(--text-bright)' }}>${portfolio.balance.toLocaleString()}</div>
           </div>
           <div>
-            <div className="text-xs text-gray-500">{t('unrPnl2')}</div>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('unrPnl2')}</div>
             <div className={`text-sm font-mono font-bold ${totalPnl >= 0 ? 'price-up' : 'price-down'}`}>
               {totalPnl >= 0 ? '+' : ''}${totalPnl.toLocaleString()}
             </div>
@@ -47,11 +48,11 @@ export default function Portfolio({ portfolio, stocks }) {
       {tab === 'positions' ? (
         <div className="overflow-auto flex-1">
           {positions.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-gray-600 text-sm">{t('noOpenPositions')}</div>
+            <div className="flex items-center justify-center h-full text-sm" style={{ color: 'var(--text-muted)' }}>{t('noOpenPositions')}</div>
           ) : (
             <table className="w-full text-xs">
               <thead>
-                <tr className="text-gray-500 border-b border-dark-600">
+                <tr style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--bg-hover)' }}>
                   {[t('symbol'),t('shares'),t('avgCost'),t('price'),t('value'),t('pnlLabel'),'P&L%'].map(h => (
                     <th key={h} className="px-3 py-1.5 text-right first:text-left font-normal">{h}</th>
                   ))}
@@ -59,12 +60,12 @@ export default function Portfolio({ portfolio, stocks }) {
               </thead>
               <tbody>
                 {positions.map(p => (
-                  <tr key={p.sym} className="border-b border-dark-700 hover:bg-dark-700">
-                    <td className="px-3 py-1.5 font-bold text-white">{p.sym}</td>
-                    <td className="px-3 py-1.5 text-right font-mono">{p.shares}</td>
-                    <td className="px-3 py-1.5 text-right font-mono">${p.avgCost.toFixed(2)}</td>
+                  <tr key={p.sym} style={{ borderBottom: '1px solid var(--bg-surface)' }}>
+                    <td className="px-3 py-1.5 font-bold" style={{ color: 'var(--text-bright)' }}>{p.sym}</td>
+                    <td className="px-3 py-1.5 text-right font-mono" style={{ color: 'var(--text-primary)' }}>{p.shares}</td>
+                    <td className="px-3 py-1.5 text-right font-mono" style={{ color: 'var(--text-primary)' }}>${p.avgCost.toFixed(2)}</td>
                     <td className={`px-3 py-1.5 text-right font-mono ${p.pnl >= 0 ? 'price-up' : 'price-down'}`}>${p.currentPrice.toFixed(2)}</td>
-                    <td className="px-3 py-1.5 text-right font-mono text-white">${p.value.toLocaleString()}</td>
+                    <td className="px-3 py-1.5 text-right font-mono" style={{ color: 'var(--text-bright)' }}>${p.value.toLocaleString()}</td>
                     <td className={`px-3 py-1.5 text-right font-mono font-bold ${p.pnl >= 0 ? 'price-up' : 'price-down'}`}>
                       {p.pnl >= 0 ? '+' : ''}${p.pnl.toFixed(2)}
                     </td>
@@ -80,11 +81,11 @@ export default function Portfolio({ portfolio, stocks }) {
       ) : (
         <div className="overflow-auto flex-1">
           {portfolio.orders.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-gray-600 text-sm">{t('noTradeHistory')}</div>
+            <div className="flex items-center justify-center h-full text-sm" style={{ color: 'var(--text-muted)' }}>{t('noTradeHistory')}</div>
           ) : (
             <table className="w-full text-xs">
               <thead>
-                <tr className="text-gray-500 border-b border-dark-600">
+                <tr style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--bg-hover)' }}>
                   {[t('time'),t('symbol'),t('side'),t('qty'),t('price'),t('total'),t('pnlLabel')].map(h => (
                     <th key={h} className="px-3 py-1.5 text-right first:text-left font-normal">{h}</th>
                   ))}
@@ -92,16 +93,17 @@ export default function Portfolio({ portfolio, stocks }) {
               </thead>
               <tbody>
                 {portfolio.orders.map(o => (
-                  <tr key={o.id} className="border-b border-dark-700 hover:bg-dark-700">
-                    <td className="px-3 py-1.5 text-gray-400">{o.time}</td>
-                    <td className="px-3 py-1.5 font-bold text-white">{o.symbol}</td>
+                  <tr key={o.id} style={{ borderBottom: '1px solid var(--bg-surface)' }}>
+                    <td className="px-3 py-1.5" style={{ color: 'var(--text-secondary)' }}>{o.time}</td>
+                    <td className="px-3 py-1.5 font-bold" style={{ color: 'var(--text-bright)' }}>{o.symbol}</td>
                     <td className={`px-3 py-1.5 font-bold ${o.side === 'buy' ? 'price-up' : 'price-down'}`}>
                       {o.side === 'buy' ? t('buy') : t('sell')}
                     </td>
-                    <td className="px-3 py-1.5 text-right font-mono">{o.qty}</td>
-                    <td className="px-3 py-1.5 text-right font-mono">${o.price.toFixed(2)}</td>
-                    <td className="px-3 py-1.5 text-right font-mono">${o.total.toLocaleString()}</td>
-                    <td className={`px-3 py-1.5 text-right font-mono ${o.realizedPnl >= 0 ? 'price-up' : o.realizedPnl < 0 ? 'price-down' : 'text-gray-500'}`}>
+                    <td className="px-3 py-1.5 text-right font-mono" style={{ color: 'var(--text-primary)' }}>{o.qty}</td>
+                    <td className="px-3 py-1.5 text-right font-mono" style={{ color: 'var(--text-primary)' }}>${o.price.toFixed(2)}</td>
+                    <td className="px-3 py-1.5 text-right font-mono" style={{ color: 'var(--text-primary)' }}>${o.total.toLocaleString()}</td>
+                    <td className={`px-3 py-1.5 text-right font-mono ${o.realizedPnl >= 0 ? 'price-up' : o.realizedPnl < 0 ? 'price-down' : ''}`}
+                      style={o.realizedPnl === 0 ? { color: 'var(--text-muted)' } : {}}>
                       {o.realizedPnl !== 0 ? (o.realizedPnl > 0 ? '+' : '') + '$' + o.realizedPnl.toFixed(2) : '—'}
                     </td>
                   </tr>

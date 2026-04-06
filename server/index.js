@@ -140,6 +140,35 @@ app.get('*', (req, res) => {
   res.sendFile(join(__dirname, '..', 'build', 'index.html'));
 });
 
+// Update competition P&L for active competitions
+setInterval(() => {
+  const now = Math.floor(Date.now() / 1000);
+  const activeComps = db.prepare("SELECT * FROM competitions WHERE status = 'active' AND end_time > ?").all(now);
+  activeComps.forEach(comp => {
+    const participants = db.prepare('SELECT * FROM competition_participants WHERE competition_id = ?').all(comp.id);
+    participants.forEach(p => {
+      // Get user's current portfolio
+      const portfolio = db.prepare('SELECT * FROM portfolios WHERE user_id = ?').get(p.user_id);
+      if (!portfolio) return;
+      const positions = db.prepare('SELECT * FROM positions WHERE user_id = ? AND shares > 0').all(p.user_id);
+      // Calculate equity from portfolio balance + positions value
+      let positionsValue = 0;
+      positions.forEach(pos => {
+        const stock = marketEngine.getStock(pos.symbol);
+        if (stock) positionsValue += stock.currentPrice * pos.shares;
+        else positionsValue += pos.avg_cost * pos.shares;
+      });
+      const equity = +(portfolio.balance + positionsValue).toFixed(2);
+      const pnl = +(equity - p.starting_balance).toFixed(2);
+      const pnlPct = +((equity / p.starting_balance - 1) * 100).toFixed(2);
+      db.prepare('UPDATE competition_participants SET equity = ?, pnl = ?, pnl_pct = ? WHERE id = ?')
+        .run(equity, pnl, pnlPct, p.id);
+    });
+  });
+  // Auto-end expired competitions
+  db.prepare("UPDATE competitions SET status = 'ended' WHERE status = 'active' AND end_time <= ?").run(now);
+}, 5000);
+
 // Start
 marketEngine.start();
 server.listen(PORT, () => {

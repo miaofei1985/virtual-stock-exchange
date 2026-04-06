@@ -53,6 +53,7 @@ class ApiClient {
   getCompetitions() { return this.get('/competitions'); }
   createCompetition(name, startBalance, durationDays) { return this.post('/competitions', { name, startBalance, durationDays }); }
   joinCompetition(id) { return this.post(`/competitions/${id}/join`); }
+  deleteCompetition(id) { return this.del(`/competitions/${id}`); }
 
   // Alerts
   getAlerts() { return this.get('/alerts'); }
