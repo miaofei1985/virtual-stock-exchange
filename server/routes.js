@@ -49,7 +49,8 @@ router.post('/auth/register', (req, res) => {
 
 router.post('/auth/login', (req, res) => {
   const { username, password } = req.body;
-  const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
+  // Support login by username or email
+  const user = db.prepare('SELECT * FROM users WHERE username = ? OR email = ?').get(username, username);
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }

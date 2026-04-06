@@ -2,7 +2,7 @@ import React, { useRef, useState, useMemo } from 'react';
 import { useLang } from '../i18n/LanguageContext';
 
 export default function Watchlist({ stocks, selectedSymbol, setSelectedSymbol }) {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const prevPrices = useRef({});
   const [search, setSearch] = useState('');
   const [watchlist, setWatchlist] = useState(() => {
@@ -40,7 +40,7 @@ export default function Watchlist({ stocks, selectedSymbol, setSelectedSymbol })
     });
   }, [stocks, search, watchlist]);
 
-  const placeholder = lang === 'zh' ? '搜索代码或名称...' : 'Search symbol or name...';
+  const placeholder = t('searchPlaceholder');
 
   return (
     <div className="flex flex-col h-full relative" style={{ background: 'var(--bg-secondary)', borderRight: '1px solid var(--border-color)' }}>
@@ -67,7 +67,7 @@ export default function Watchlist({ stocks, selectedSymbol, setSelectedSymbol })
       <div className="overflow-y-auto flex-1">
         {filtered.length === 0 ? (
           <div className="text-center py-8 text-xs" style={{ color: 'var(--text-muted)' }}>
-            {lang === 'zh' ? '未找到匹配的品种' : 'No matching symbols'}
+            {t('noMatch')}
           </div>
         ) : filtered.map(stock => {
           const prev = prevPrices.current[stock.symbol];
@@ -89,7 +89,7 @@ export default function Watchlist({ stocks, selectedSymbol, setSelectedSymbol })
                 <button
                   onClick={(e) => toggleWatchlist(stock.symbol, e)}
                   className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-xs hover:scale-110 transition-transform min-w-[44px] min-h-[44px]"
-                  aria-label={starred ? (lang === 'zh' ? '取消自选' : 'Remove from watchlist') : (lang === 'zh' ? '加入自选' : 'Add to watchlist')}>
+                  aria-label={starred ? t('removeFromWatchlist') : t('addToWatchlist')}>
                   {starred ? '⭐' : '☆'}
                 </button>
                 <div>
@@ -117,8 +117,8 @@ export default function Watchlist({ stocks, selectedSymbol, setSelectedSymbol })
             color: toast.isAdded ? 'var(--up-color)' : 'var(--text-secondary)',
           }}>
           {toast.isAdded ? '⭐' : '☆'} {toast.symbol} {toast.isAdded
-            ? (lang === 'zh' ? '已加入自选' : 'Added to watchlist')
-            : (lang === 'zh' ? '已取消自选' : 'Removed from watchlist')}
+            ? t('addedToWatchlist')
+            : t('removedFromWatchlist')}
         </div>
       )}
     </div>

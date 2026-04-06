@@ -58,6 +58,42 @@ export const translations = {
     symbol: 'Symbol',
     price: 'Price',
     chgPct: 'Chg%',
+    searchPlaceholder: 'Search symbol or name...',
+    noMatch: 'No matching symbols',
+    addedToWatchlist: 'Added to watchlist',
+    removedFromWatchlist: 'Removed from watchlist',
+    addToWatchlist: 'Add to watchlist',
+    removeFromWatchlist: 'Remove from watchlist',
+
+    // Not Found
+    pageNotFound: 'Page Not Found',
+    pageNotFoundDesc: 'The page you are looking for does not exist',
+    backToTrading: 'Back to Trading',
+
+    // Error
+    unexpectedError: 'An unexpected error occurred',
+
+    // Auth extra
+    invalidEmail: 'Please enter a valid email',
+    invalidCodeHint: 'Please enter the 6-digit code',
+    noRealMoney: 'No real money · No credit card required',
+    changeEmail: 'Change email',
+    // Login/Register tabs
+    loginTab: 'Sign In',
+    registerTab: 'Register',
+    loginWithEmail: 'Sign in with email',
+    registerWithEmail: 'Register with email',
+    loginPassword: 'Password',
+    loginSubmit: 'Sign In',
+    registerSubmit: 'Create Account',
+    noAccountYet: "Don't have an account?",
+    hasAccount: 'Already have an account?',
+    switchToRegister: 'Register',
+    switchToLogin: 'Sign In',
+    loginSuccess: 'Welcome back!',
+    registerSuccess: 'Account created!',
+    loginFailed: 'Invalid email or password',
+    registerFailed: 'Registration failed',
 
     // Chart
     volume: 'Volume',
@@ -265,6 +301,42 @@ export const translations = {
     symbol: '代码',
     price: '价格',
     chgPct: '涨跌%',
+    searchPlaceholder: '搜索代码或名称...',
+    noMatch: '未找到匹配的品种',
+    addedToWatchlist: '已加入自选',
+    removedFromWatchlist: '已取消自选',
+    addToWatchlist: '加入自选',
+    removeFromWatchlist: '取消自选',
+
+    // 404页面
+    pageNotFound: '页面未找到',
+    pageNotFoundDesc: '你访问的页面不存在',
+    backToTrading: '返回交易',
+
+    // 错误
+    unexpectedError: '发生意外错误',
+
+    // 登录额外
+    invalidEmail: '请输入有效邮箱',
+    invalidCodeHint: '请输入 6 位验证码',
+    noRealMoney: '不涉及真实资金 · 不需要信用卡',
+    changeEmail: '更换邮箱',
+    // 登录/注册切换
+    loginTab: '登录',
+    registerTab: '注册',
+    loginWithEmail: '邮箱登录',
+    registerWithEmail: '邮箱注册',
+    loginPassword: '密码',
+    loginSubmit: '登录',
+    registerSubmit: '创建账户',
+    noAccountYet: '还没有账户？',
+    hasAccount: '已有账户？',
+    switchToRegister: '注册',
+    switchToLogin: '登录',
+    loginSuccess: '欢迎回来！',
+    registerSuccess: '账户创建成功！',
+    loginFailed: '邮箱或密码错误',
+    registerFailed: '注册失败',
 
     // 图表
     volume: '成交量',

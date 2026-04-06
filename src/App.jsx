@@ -99,11 +99,11 @@ export default function App() {
           </span>
 
           <button onClick={toggleLang}
-            className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all font-bold min-w-[44px] min-h-[44px]"
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-all font-bold tracking-wider min-w-[56px] min-h-[44px] lang-toggle-btn"
+            style={{ background: 'var(--gold)', color: '#1a1a2e', border: '2px solid transparent', boxShadow: '0 0 12px rgba(255,215,0,0.3)' }}
             title={lang === 'en' ? '切换到中文' : 'Switch to English'}
             aria-label={lang === 'en' ? '切换到中文' : 'Switch to English'}>
-            {lang === 'en' ? '中' : 'EN'}
+            🌐 {lang === 'en' ? '中文' : 'English'}
           </button>
 
           <button onClick={toggleTheme}

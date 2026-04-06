@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { saveSession } from '../utils/auth';
 import { api } from '../utils/api';
 import { useLang } from '../i18n/LanguageContext';
@@ -32,37 +32,105 @@ function generateRandomUsername(provider) {
   return `${provider}_${suffix}`;
 }
 
-export default function AuthModal({ onAuth }) {
-  const { t, lang } = useLang();
+/* ═══ 6-digit code input using React refs (no direct DOM manipulation) ═══ */
+function CodeInput({ value, onChange, inputStyle, onFocus, onBlur }) {
+  const refs = useRef([]);
 
-  // Email verification flow
-  const [step, setStep] = useState('email'); // 'email' | 'code'
+  const digits = value.split('');
+  while (digits.length < 6) digits.push('');
+
+  const handleChange = (i, e) => {
+    const val = e.target.value.replace(/\D/g, '');
+    const newDigits = [...digits];
+    newDigits[i] = val ? val[val.length - 1] : '';
+    const newCode = newDigits.join('');
+    onChange(newCode);
+    if (val && i < 5) {
+      refs.current[i + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (i, e) => {
+    if (e.key === 'Backspace' && !digits[i] && i > 0) {
+      refs.current[i - 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const paste = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 6);
+    onChange(paste);
+    const nextIdx = Math.min(paste.length, 5);
+    refs.current[nextIdx]?.focus();
+  };
+
+  return (
+    <div className="flex gap-2 justify-between">
+      {digits.map((d, i) => (
+        <input
+          key={i}
+          ref={el => refs.current[i] = el}
+          type="text"
+          inputMode="numeric"
+          maxLength={1}
+          value={d}
+          autoFocus={i === 0}
+          style={{
+            ...inputStyle,
+            width: '48px',
+            height: '56px',
+            textAlign: 'center',
+            fontSize: '20px',
+            fontWeight: '700',
+            padding: '0',
+            letterSpacing: '0',
+            borderRadius: '10px',
+          }}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          onChange={e => handleChange(i, e)}
+          onKeyDown={e => handleKeyDown(i, e)}
+          onPaste={handlePaste}
+          aria-label={`Digit ${i + 1}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+export default function AuthModal({ onAuth }) {
+  const { t, lang, toggleLang } = useLang();
+
+  // Mode: 'login' | 'register' | 'code'
+  const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState('');
   const [countdown, setCountdown] = useState(0);
   const [devCode, setDevCode] = useState('');
 
-  // Countdown timer
   useEffect(() => {
     if (countdown <= 0) return;
     const timer = setInterval(() => setCountdown(c => c - 1), 1000);
     return () => clearInterval(timer);
   }, [countdown]);
 
+  // ═══ Email verification code flow ═══
   const handleSendCode = async (e) => {
     e.preventDefault();
     setError('');
     if (!email || !email.includes('@')) {
-      setError(lang === 'zh' ? '请输入有效邮箱' : 'Please enter a valid email');
+      setError(t('invalidEmail'));
       return;
     }
     setLoading('send');
     try {
       const res = await api.sendVerificationCode(email);
       setDevCode(res.dev_code || '');
-      setStep('code');
+      setMode('code');
       setCountdown(60);
     } catch (err) {
       setError(err.message);
@@ -74,7 +142,7 @@ export default function AuthModal({ onAuth }) {
     e.preventDefault();
     setError('');
     if (code.length !== 6) {
-      setError(lang === 'zh' ? '请输入 6 位验证码' : 'Please enter the 6-digit code');
+      setError(t('invalidCodeHint'));
       return;
     }
     setLoading('verify');
@@ -100,6 +168,57 @@ export default function AuthModal({ onAuth }) {
     }
   };
 
+  // ═══ Login flow ═══
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!email || !email.includes('@')) {
+      setError(t('invalidEmail'));
+      return;
+    }
+    if (!password) {
+      setError(t('loginPassword'));
+      return;
+    }
+    setLoading('login');
+    try {
+      const data = await api.login(email, password);
+      saveSession(data.user);
+      onAuth(data.user);
+    } catch (err) {
+      setError(t('loginFailed'));
+    }
+    setLoading('');
+  };
+
+  // ═══ Register flow ═══
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!username.trim()) {
+      setError(t('username'));
+      return;
+    }
+    if (!email || !email.includes('@')) {
+      setError(t('invalidEmail'));
+      return;
+    }
+    if (!password || password.length < 4) {
+      setError(t('loginPassword'));
+      return;
+    }
+    setLoading('register');
+    try {
+      const data = await api.register(username.trim(), email, password);
+      saveSession(data.user);
+      onAuth(data.user);
+    } catch (err) {
+      setError(t('registerFailed'));
+    }
+    setLoading('');
+  };
+
+  // ═══ OAuth ═══
   const handleOAuth = async (provider) => {
     setLoading(provider);
     setError('');
@@ -138,10 +257,43 @@ export default function AuthModal({ onAuth }) {
     transition: 'border-color 0.2s',
   };
 
-  const inputFocusStyle = { borderColor: 'var(--up-color)' };
+  const handleFocus = (e) => { e.target.style.borderColor = 'var(--up-color)'; };
+  const handleBlur = (e) => { e.target.style.borderColor = 'var(--border-color)'; };
 
-  const handleFocus = (e) => Object.assign(e.target.style, inputFocusStyle);
-  const handleBlur = (e) => Object.assign(e.target.style, { borderColor: 'var(--border-color)' });
+  // ═══ Language toggle button ═══
+  const LangToggle = () => (
+    <button onClick={toggleLang}
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-all font-bold tracking-wider lang-toggle-btn"
+      style={{ background: 'var(--gold)', color: '#1a1a2e', border: '2px solid transparent', boxShadow: '0 0 12px rgba(255,215,0,0.3)' }}
+      title={lang === 'en' ? '切换到中文' : 'Switch to English'}
+      aria-label={lang === 'en' ? '切换到中文' : 'Switch to English'}>
+      🌐 {lang === 'en' ? '中文' : 'English'}
+    </button>
+  );
+
+  // ═══ Tab bar: Login / Register ═══
+  const TabBar = () => (
+    <div className="flex rounded-xl overflow-hidden mb-6" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border-color)' }}>
+      <button
+        onClick={() => { setMode('login'); setError(''); }}
+        className="flex-1 py-3 text-sm font-bold transition-all"
+        style={{
+          background: mode === 'login' ? 'var(--up-color)' : 'transparent',
+          color: mode === 'login' ? 'white' : 'var(--text-secondary)',
+        }}>
+        {t('loginTab')}
+      </button>
+      <button
+        onClick={() => { setMode('register'); setError(''); }}
+        className="flex-1 py-3 text-sm font-bold transition-all"
+        style={{
+          background: mode === 'register' ? 'var(--up-color)' : 'transparent',
+          color: mode === 'register' ? 'white' : 'var(--text-secondary)',
+        }}>
+        {t('registerTab')}
+      </button>
+    </div>
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex" style={{ background: 'var(--bg-primary)' }}>
@@ -168,7 +320,7 @@ export default function AuthModal({ onAuth }) {
 
           {/* Feature cards */}
           <div className="flex flex-col gap-4">
-            {FEATURES.map((f, i) => (
+            {FEATURES.map(f => (
               <div key={f.key} className="flex items-start gap-4 p-4 rounded-xl transition-all"
                 style={{ background: 'var(--bg-panel)', border: '1px solid var(--border-color)' }}>
                 <div className="text-2xl flex-shrink-0 mt-0.5">{f.icon}</div>
@@ -187,20 +339,33 @@ export default function AuthModal({ onAuth }) {
           {/* Trust line */}
           <div className="mt-8 flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
             <span>🔒</span>
-            <span>{lang === 'zh' ? '不涉及真实资金 · 不需要信用卡' : 'No real money · No credit card required'}</span>
+            <span>{t('noRealMoney')}</span>
           </div>
         </div>
       </div>
 
       {/* ═══ Right Panel — Auth ═══ */}
-      <div className="flex-1 lg:w-1/2 xl:w-[45%] flex items-center justify-center p-6">
+      <div className="flex-1 lg:w-1/2 xl:w-[45%] flex flex-col items-center justify-center p-6 relative">
+
+        {/* Language toggle — top right */}
+        <div className="absolute top-4 right-4">
+          <LangToggle />
+        </div>
+
         <div className="w-full max-w-md">
-          {/* Mobile logo */}
-          <div className="lg:hidden text-center mb-8">
-            <div className="text-3xl font-bold tracking-wider text-gold mb-1">{t('vse')}</div>
+          {/* Mobile logo + lang toggle */}
+          <div className="lg:hidden text-center mb-6">
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <div className="text-3xl font-bold tracking-wider text-gold">{t('vse')}</div>
+            </div>
             <div className="text-xs tracking-widest uppercase" style={{ color: 'var(--text-muted)' }}>
               {t('vseFullName')}
             </div>
+          </div>
+
+          {/* Mobile language toggle */}
+          <div className="lg:hidden flex justify-center mb-4">
+            <LangToggle />
           </div>
 
           {/* Card */}
@@ -210,18 +375,16 @@ export default function AuthModal({ onAuth }) {
             <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-bright)' }}>
               {t('welcomeToVse')}
             </h2>
-            <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
-              {step === 'email' ? t('enterEmail') : t('checkSpam')}
-            </p>
 
-            {/* Step 1: Email */}
-            {step === 'email' && (
+            {/* ═══ Login Mode ═══ */}
+            {mode === 'login' && (
               <>
-                <form onSubmit={handleSendCode} className="flex flex-col gap-4">
+                <TabBar />
+                <form onSubmit={handleLogin} className="flex flex-col gap-4">
                   <input
                     style={inputStyle}
                     type="email"
-                    placeholder={lang === 'zh' ? 'your@email.com' : 'your@email.com'}
+                    placeholder="your@email.com"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     onFocus={handleFocus}
@@ -230,23 +393,34 @@ export default function AuthModal({ onAuth }) {
                     autoFocus
                     aria-label={t('emailAddress')}
                   />
+                  <input
+                    style={inputStyle}
+                    type="password"
+                    placeholder={t('loginPassword')}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    required
+                    aria-label={t('loginPassword')}
+                  />
                   {error && <div className="price-down text-xs">{error}</div>}
-                  <button type="submit" disabled={loading === 'send'}
+                  <button type="submit" disabled={!!loading}
                     className="w-full py-3 rounded-xl text-sm font-bold transition-all min-h-[48px]"
                     style={{
                       background: 'var(--up-color)',
                       color: 'white',
-                      opacity: loading === 'send' ? 0.7 : 1,
+                      opacity: loading === 'login' ? 0.7 : 1,
                     }}>
-                    {loading === 'send'
+                    {loading === 'login'
                       ? <span className="animate-spin inline-block">⟳</span>
-                      : t('sendCode')}
+                      : t('loginSubmit')}
                   </button>
                 </form>
 
                 <div className="flex items-center gap-3 my-5">
                   <div className="flex-1 h-px" style={{ background: 'var(--border-color)' }} />
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{lang === 'zh' ? '或' : 'or'}</span>
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('or')}</span>
                   <div className="flex-1 h-px" style={{ background: 'var(--border-color)' }} />
                 </div>
 
@@ -267,107 +441,139 @@ export default function AuthModal({ onAuth }) {
               </>
             )}
 
-            {/* Step 2: Verification Code */}
-            {step === 'code' && (
-              <form onSubmit={handleVerify} className="flex flex-col gap-4">
-                <div className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
-                  {t('codeSent')} <span style={{ color: 'var(--text-bright)' }}>{email}</span>
+            {/* ═══ Register Mode ═══ */}
+            {mode === 'register' && (
+              <>
+                <TabBar />
+                <form onSubmit={handleRegister} className="flex flex-col gap-4">
+                  <input
+                    style={inputStyle}
+                    type="text"
+                    placeholder={t('username')}
+                    value={username}
+                    onChange={e => setUsername(e.target.value)}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    required
+                    autoFocus
+                    aria-label={t('username')}
+                  />
+                  <input
+                    style={inputStyle}
+                    type="email"
+                    placeholder="your@email.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    required
+                    aria-label={t('emailAddress')}
+                  />
+                  <input
+                    style={inputStyle}
+                    type="password"
+                    placeholder={t('loginPassword')}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    required
+                    aria-label={t('loginPassword')}
+                  />
+                  {error && <div className="price-down text-xs">{error}</div>}
+                  <button type="submit" disabled={!!loading}
+                    className="w-full py-3 rounded-xl text-sm font-bold transition-all min-h-[48px]"
+                    style={{
+                      background: 'var(--up-color)',
+                      color: 'white',
+                      opacity: loading === 'register' ? 0.7 : 1,
+                    }}>
+                    {loading === 'register'
+                      ? <span className="animate-spin inline-block">⟳</span>
+                      : t('registerSubmit')}
+                  </button>
+                </form>
+
+                <div className="flex items-center gap-3 my-5">
+                  <div className="flex-1 h-px" style={{ background: 'var(--border-color)' }} />
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('or')}</span>
+                  <div className="flex-1 h-px" style={{ background: 'var(--border-color)' }} />
                 </div>
 
-                {/* 6-digit code input */}
-                <div className="flex gap-2 justify-between">
-                  {[0, 1, 2, 3, 4, 5].map(i => (
-                    <input
-                      key={i}
-                      id={`code-${i}`}
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={1}
-                      autoFocus={i === 0}
-                      style={{
-                        ...inputStyle,
-                        width: '48px',
-                        height: '56px',
-                        textAlign: 'center',
-                        fontSize: '20px',
-                        fontWeight: '700',
-                        padding: '0',
-                        letterSpacing: '0',
-                        borderRadius: '10px',
-                      }}
-                      onFocus={handleFocus}
-                      onBlur={handleBlur}
-                      onChange={e => {
-                        const val = e.target.value.replace(/\D/g, '');
-                        e.target.value = val;
-                        if (val && i < 5) {
-                          document.getElementById(`code-${i + 1}`)?.focus();
-                        }
-                        // Build full code from all 6 inputs
-                        const digits = [0, 1, 2, 3, 4, 5].map(j =>
-                          document.getElementById(`code-${j}`)?.value || ''
-                        ).join('');
-                        setCode(digits);
-                      }}
-                      onKeyDown={e => {
-                        if (e.key === 'Backspace' && !e.target.value && i > 0) {
-                          document.getElementById(`code-${i - 1}`)?.focus();
-                        }
-                      }}
-                      onPaste={e => {
-                        e.preventDefault();
-                        const paste = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 6);
-                        paste.split('').forEach((ch, j) => {
-                          const el = document.getElementById(`code-${j}`);
-                          if (el) el.value = ch;
-                        });
-                        setCode(paste);
-                        const nextEmpty = Math.min(paste.length, 5);
-                        document.getElementById(`code-${nextEmpty}`)?.focus();
-                      }}
-                      aria-label={`Digit ${i + 1}`}
-                    />
-                  ))}
+                <div className="flex flex-col gap-2">
+                  <button onClick={() => handleOAuth('google')} disabled={!!loading}
+                    className="flex items-center justify-center gap-2.5 w-full py-3 rounded-xl text-sm transition-all min-h-[48px]"
+                    style={{ background: 'var(--bg-panel)', border: '1px solid var(--border-color)', color: 'var(--text-bright)' }}>
+                    {loading === 'google' ? <span className="animate-spin text-xs">⟳</span> : <GoogleIcon />}
+                    {t('continueWithGoogle')}
+                  </button>
+                  <button onClick={() => handleOAuth('github')} disabled={!!loading}
+                    className="flex items-center justify-center gap-2.5 w-full py-3 rounded-xl text-sm transition-all min-h-[48px]"
+                    style={{ background: 'var(--bg-panel)', border: '1px solid var(--border-color)', color: 'var(--text-bright)' }}>
+                    {loading === 'github' ? <span className="animate-spin text-xs">⟳</span> : <GithubIcon />}
+                    {t('continueWithGitHub')}
+                  </button>
                 </div>
+              </>
+            )}
 
-                {devCode && (
-                  <div className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-                    🔧 {t('devCodeHint')}: <span className="font-mono font-bold" style={{ color: 'var(--gold)' }}>{devCode}</span>
+            {/* ═══ Verification Code Mode ═══ */}
+            {mode === 'code' && (
+              <>
+                <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
+                  {t('checkSpam')}
+                </p>
+                <form onSubmit={handleVerify} className="flex flex-col gap-4">
+                  <div className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
+                    {t('codeSent')} <span style={{ color: 'var(--text-bright)' }}>{email}</span>
                   </div>
-                )}
 
-                {error && <div className="price-down text-xs text-center">{error}</div>}
+                  <CodeInput
+                    value={code}
+                    onChange={setCode}
+                    inputStyle={inputStyle}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                  />
 
-                <button type="submit" disabled={loading === 'verify' || code.length < 6}
-                  className="w-full py-3 rounded-xl text-sm font-bold transition-all min-h-[48px]"
-                  style={{
-                    background: 'var(--up-color)',
-                    color: 'white',
-                    opacity: (loading === 'verify' || code.length < 6) ? 0.5 : 1,
-                  }}>
-                  {loading === 'verify'
-                    ? <span className="animate-spin inline-block">⟳</span>
-                    : t('verify')}
-                </button>
-
-                {/* Resend */}
-                <div className="text-center text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {countdown > 0 ? (
-                    <span>{t('resendIn')} {countdown}{t('seconds')}</span>
-                  ) : (
-                    <button type="button" onClick={handleResend}
-                      className="hover:underline" style={{ color: 'var(--up-color)' }}>
-                      {t('resend')}
-                    </button>
+                  {devCode && (
+                    <div className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
+                      🔧 {t('devCodeHint')}: <span className="font-mono font-bold" style={{ color: 'var(--gold)' }}>{devCode}</span>
+                    </div>
                   )}
-                </div>
 
-                <button type="button" onClick={() => { setStep('email'); setError(''); setCode(''); }}
-                  className="text-xs text-center min-h-[44px]"
-                  style={{ color: 'var(--text-muted)' }}>
-                  ← {lang === 'zh' ? '更换邮箱' : 'Change email'}
-                </button>
-              </form>
+                  {error && <div className="price-down text-xs text-center">{error}</div>}
+
+                  <button type="submit" disabled={loading === 'verify' || code.length < 6}
+                    className="w-full py-3 rounded-xl text-sm font-bold transition-all min-h-[48px]"
+                    style={{
+                      background: 'var(--up-color)',
+                      color: 'white',
+                      opacity: (loading === 'verify' || code.length < 6) ? 0.5 : 1,
+                    }}>
+                    {loading === 'verify'
+                      ? <span className="animate-spin inline-block">⟳</span>
+                      : t('verify')}
+                  </button>
+
+                  <div className="text-center text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {countdown > 0 ? (
+                      <span>{t('resendIn')} {countdown}{t('seconds')}</span>
+                    ) : (
+                      <button type="button" onClick={handleResend}
+                        className="hover:underline" style={{ color: 'var(--up-color)' }}>
+                        {t('resend')}
+                      </button>
+                    )}
+                  </div>
+
+                  <button type="button" onClick={() => { setMode('login'); setError(''); setCode(''); }}
+                    className="text-xs text-center min-h-[44px]"
+                    style={{ color: 'var(--text-muted)' }}>
+                    ← {t('changeEmail')}
+                  </button>
+                </form>
+              </>
             )}
 
             {/* Bottom */}
