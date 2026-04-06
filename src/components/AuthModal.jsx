@@ -1,7 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { saveSession } from '../utils/auth';
 import { api } from '../utils/api';
 import { useLang } from '../i18n/LanguageContext';
+
+const FEATURES = [
+  { icon: '📊', key: 'realtime', titleKey: 'featureRealtime', descKey: 'featureRealtimeDesc' },
+  { icon: '🕯️', key: 'charts', titleKey: 'featureCharts', descKey: 'featureChartsDesc' },
+  { icon: '💹', key: 'trading', titleKey: 'featureTrading', descKey: 'featureTradingDesc' },
+  { icon: '🏆', key: 'compete', titleKey: 'featureCompete', descKey: 'featureCompeteDesc' },
+];
 
 const GithubIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
@@ -26,26 +33,68 @@ function generateRandomUsername(provider) {
 }
 
 export default function AuthModal({ onAuth }) {
-  const { t } = useLang();
-  const [mode, setMode] = useState('login');
+  const { t, lang } = useLang();
+
+  // Email verification flow
+  const [step, setStep] = useState('email'); // 'email' | 'code'
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [username, setUsername] = useState('');
+  const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState('');
+  const [countdown, setCountdown] = useState(0);
+  const [devCode, setDevCode] = useState('');
 
-  const handleEmail = async (e) => {
+  // Countdown timer
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = setInterval(() => setCountdown(c => c - 1), 1000);
+    return () => clearInterval(timer);
+  }, [countdown]);
+
+  const handleSendCode = async (e) => {
     e.preventDefault();
     setError('');
+    if (!email || !email.includes('@')) {
+      setError(lang === 'zh' ? '请输入有效邮箱' : 'Please enter a valid email');
+      return;
+    }
+    setLoading('send');
     try {
-      let data;
-      if (mode === 'register') {
-        data = await api.register(username, email, password);
-      } else {
-        data = await api.login(username, password);
-      }
+      const res = await api.sendVerificationCode(email);
+      setDevCode(res.dev_code || '');
+      setStep('code');
+      setCountdown(60);
+    } catch (err) {
+      setError(err.message);
+    }
+    setLoading('');
+  };
+
+  const handleVerify = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (code.length !== 6) {
+      setError(lang === 'zh' ? '请输入 6 位验证码' : 'Please enter the 6-digit code');
+      return;
+    }
+    setLoading('verify');
+    try {
+      const data = await api.verifyCode(email, code);
       saveSession(data.user);
       onAuth(data.user);
+    } catch (err) {
+      setError(t('invalidCode'));
+    }
+    setLoading('');
+  };
+
+  const handleResend = async () => {
+    if (countdown > 0) return;
+    setError('');
+    try {
+      const res = await api.sendVerificationCode(email);
+      setDevCode(res.dev_code || '');
+      setCountdown(60);
     } catch (err) {
       setError(err.message);
     }
@@ -62,7 +111,6 @@ export default function AuthModal({ onAuth }) {
       saveSession(data.user);
       onAuth(data.user);
     } catch (err) {
-      // If username taken, retry once
       try {
         const retryUsername = generateRandomUsername(provider);
         const retryPassword = Math.random().toString(36).slice(2, 10);
@@ -77,72 +125,256 @@ export default function AuthModal({ onAuth }) {
     }
   };
 
+  const inputStyle = {
+    background: 'var(--bg-surface)',
+    border: '1px solid var(--border-color)',
+    color: 'var(--text-bright)',
+    borderRadius: '8px',
+    padding: '14px 16px',
+    fontSize: '15px',
+    fontFamily: 'inherit',
+    outline: 'none',
+    width: '100%',
+    transition: 'border-color 0.2s',
+  };
+
+  const inputFocusStyle = { borderColor: 'var(--up-color)' };
+
+  const handleFocus = (e) => Object.assign(e.target.style, inputFocusStyle);
+  const handleBlur = (e) => Object.assign(e.target.style, { borderColor: 'var(--border-color)' });
+
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 p-4"
-      style={{ background: 'rgba(0,0,0,0.9)' }}>
-      <div className="rounded-xl w-full max-w-sm shadow-2xl"
-        style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
-        <div className="px-6 pt-8 pb-4 text-center">
-          <div className="text-3xl font-bold tracking-wider mb-1 text-gold">{t('vse')}</div>
-          <div className="text-xs tracking-widest uppercase" style={{ color: 'var(--text-secondary)' }}>{t('vseFullName')}</div>
-          <div className="mt-4 font-semibold" style={{ color: 'var(--text-bright)' }}>
-            {mode === 'login' ? t('signInToTrade') : t('createAccount')}
+    <div className="fixed inset-0 z-50 flex" style={{ background: 'var(--bg-primary)' }}>
+      {/* ═══ Left Panel — Features ═══ */}
+      <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] flex-col justify-center px-12 xl:px-20"
+        style={{ background: 'var(--bg-secondary)' }}>
+        <div className="max-w-lg">
+          {/* Logo */}
+          <div className="flex items-center gap-3 mb-10">
+            <div className="text-4xl font-bold tracking-wider text-gold">{t('vse')}</div>
+            <div className="w-px h-8" style={{ background: 'var(--border-color)' }} />
+            <div className="text-xs tracking-widest uppercase" style={{ color: 'var(--text-muted)' }}>
+              {t('vseFullName')}
+            </div>
+          </div>
+
+          {/* Headline */}
+          <h1 className="text-3xl xl:text-4xl font-bold mb-3 leading-tight" style={{ color: 'var(--text-bright)' }}>
+            {t('landingSubtitle')}
+          </h1>
+          <p className="text-base mb-10 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+            {t('landingDescription')}
+          </p>
+
+          {/* Feature cards */}
+          <div className="flex flex-col gap-4">
+            {FEATURES.map((f, i) => (
+              <div key={f.key} className="flex items-start gap-4 p-4 rounded-xl transition-all"
+                style={{ background: 'var(--bg-panel)', border: '1px solid var(--border-color)' }}>
+                <div className="text-2xl flex-shrink-0 mt-0.5">{f.icon}</div>
+                <div>
+                  <div className="font-semibold text-sm mb-0.5" style={{ color: 'var(--text-bright)' }}>
+                    {t(f.titleKey)}
+                  </div>
+                  <div className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                    {t(f.descKey)}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Trust line */}
+          <div className="mt-8 flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <span>🔒</span>
+            <span>{lang === 'zh' ? '不涉及真实资金 · 不需要信用卡' : 'No real money · No credit card required'}</span>
           </div>
         </div>
+      </div>
 
-        <div className="px-6 flex flex-col gap-2">
-          <button onClick={() => handleOAuth('google')} disabled={!!loading} aria-label={t('continueWithGoogle')}
-            className="flex items-center justify-center gap-2.5 w-full py-2.5 rounded-lg text-sm transition-all disabled:opacity-50 min-h-[44px]"
-            style={{ background: 'var(--bg-panel)', border: '1px solid var(--border-color)', color: 'var(--text-bright)' }}>
-            {loading === 'google' ? <span className="animate-spin text-xs">⟳</span> : <GoogleIcon />}
-            {t('continueWithGoogle')}
-          </button>
-          <button onClick={() => handleOAuth('github')} disabled={!!loading} aria-label={t('continueWithGitHub')}
-            className="flex items-center justify-center gap-2.5 w-full py-2.5 rounded-lg text-sm transition-all disabled:opacity-50 min-h-[44px]"
-            style={{ background: 'var(--bg-panel)', border: '1px solid var(--border-color)', color: 'var(--text-bright)' }}>
-            {loading === 'github' ? <span className="animate-spin text-xs">⟳</span> : <GithubIcon />}
-            {t('continueWithGitHub')}
-          </button>
-        </div>
+      {/* ═══ Right Panel — Auth ═══ */}
+      <div className="flex-1 lg:w-1/2 xl:w-[45%] flex items-center justify-center p-6">
+        <div className="w-full max-w-md">
+          {/* Mobile logo */}
+          <div className="lg:hidden text-center mb-8">
+            <div className="text-3xl font-bold tracking-wider text-gold mb-1">{t('vse')}</div>
+            <div className="text-xs tracking-widest uppercase" style={{ color: 'var(--text-muted)' }}>
+              {t('vseFullName')}
+            </div>
+          </div>
 
-        <div className="flex items-center gap-3 px-6 my-4">
-          <div className="flex-1 h-px" style={{ background: 'var(--border-color)' }} />
-          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('or')}</span>
-          <div className="flex-1 h-px" style={{ background: 'var(--border-color)' }} />
-        </div>
+          {/* Card */}
+          <div className="rounded-2xl p-8 shadow-xl"
+            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
 
-        <form onSubmit={handleEmail} className="px-6 flex flex-col gap-3">
-          <input className="input-dark" placeholder={t('username')} value={username}
-            onChange={e => setUsername(e.target.value)} required minLength={2}
-            aria-label={t('username')} />
-          {mode === 'register' && (
-            <input className="input-dark" type="email" placeholder={t('emailAddress')} value={email}
-              onChange={e => setEmail(e.target.value)} required
-              aria-label={t('emailAddress')} />
-          )}
-          <input className="input-dark" type="password" placeholder={t('password')} value={password}
-            onChange={e => setPassword(e.target.value)} required minLength={6}
-            aria-label={t('password')} />
+            <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-bright)' }}>
+              {t('welcomeToVse')}
+            </h2>
+            <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
+              {step === 'email' ? t('enterEmail') : t('checkSpam')}
+            </p>
 
-          {error && <div className="text-down text-xs text-center">{error}</div>}
+            {/* Step 1: Email */}
+            {step === 'email' && (
+              <>
+                <form onSubmit={handleSendCode} className="flex flex-col gap-4">
+                  <input
+                    style={inputStyle}
+                    type="email"
+                    placeholder={lang === 'zh' ? 'your@email.com' : 'your@email.com'}
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    required
+                    autoFocus
+                    aria-label={t('emailAddress')}
+                  />
+                  {error && <div className="price-down text-xs">{error}</div>}
+                  <button type="submit" disabled={loading === 'send'}
+                    className="w-full py-3 rounded-xl text-sm font-bold transition-all min-h-[48px]"
+                    style={{
+                      background: 'var(--up-color)',
+                      color: 'white',
+                      opacity: loading === 'send' ? 0.7 : 1,
+                    }}>
+                    {loading === 'send'
+                      ? <span className="animate-spin inline-block">⟳</span>
+                      : t('sendCode')}
+                  </button>
+                </form>
 
-          <button type="submit"
-            className="w-full py-2.5 text-white rounded-lg text-sm font-bold transition-all min-h-[44px]"
-            style={{ background: 'var(--up-color)' }}>
-            {mode === 'login' ? t('signIn') : t('createAccount')}
-          </button>
-        </form>
+                <div className="flex items-center gap-3 my-5">
+                  <div className="flex-1 h-px" style={{ background: 'var(--border-color)' }} />
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{lang === 'zh' ? '或' : 'or'}</span>
+                  <div className="flex-1 h-px" style={{ background: 'var(--border-color)' }} />
+                </div>
 
-        <div className="px-6 py-5 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
-          {mode === 'login' ? (
-            <>{t('noAccount')} <button className="text-up hover:underline" onClick={() => { setMode('register'); setError(''); }}>{t('register')}</button></>
-          ) : (
-            <>{t('alreadyRegistered')} <button className="text-up hover:underline" onClick={() => { setMode('login'); setError(''); }}>{t('signIn')}</button></>
-          )}
-        </div>
+                <div className="flex flex-col gap-2">
+                  <button onClick={() => handleOAuth('google')} disabled={!!loading}
+                    className="flex items-center justify-center gap-2.5 w-full py-3 rounded-xl text-sm transition-all min-h-[48px]"
+                    style={{ background: 'var(--bg-panel)', border: '1px solid var(--border-color)', color: 'var(--text-bright)' }}>
+                    {loading === 'google' ? <span className="animate-spin text-xs">⟳</span> : <GoogleIcon />}
+                    {t('continueWithGoogle')}
+                  </button>
+                  <button onClick={() => handleOAuth('github')} disabled={!!loading}
+                    className="flex items-center justify-center gap-2.5 w-full py-3 rounded-xl text-sm transition-all min-h-[48px]"
+                    style={{ background: 'var(--bg-panel)', border: '1px solid var(--border-color)', color: 'var(--text-bright)' }}>
+                    {loading === 'github' ? <span className="animate-spin text-xs">⟳</span> : <GithubIcon />}
+                    {t('continueWithGitHub')}
+                  </button>
+                </div>
+              </>
+            )}
 
-        <div className="px-6 pb-4 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
-          {t('startWith')}
+            {/* Step 2: Verification Code */}
+            {step === 'code' && (
+              <form onSubmit={handleVerify} className="flex flex-col gap-4">
+                <div className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
+                  {t('codeSent')} <span style={{ color: 'var(--text-bright)' }}>{email}</span>
+                </div>
+
+                {/* 6-digit code input */}
+                <div className="flex gap-2 justify-between">
+                  {[0, 1, 2, 3, 4, 5].map(i => (
+                    <input
+                      key={i}
+                      id={`code-${i}`}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      autoFocus={i === 0}
+                      style={{
+                        ...inputStyle,
+                        width: '48px',
+                        height: '56px',
+                        textAlign: 'center',
+                        fontSize: '20px',
+                        fontWeight: '700',
+                        padding: '0',
+                        letterSpacing: '0',
+                        borderRadius: '10px',
+                      }}
+                      onFocus={handleFocus}
+                      onBlur={handleBlur}
+                      onChange={e => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        e.target.value = val;
+                        if (val && i < 5) {
+                          document.getElementById(`code-${i + 1}`)?.focus();
+                        }
+                        // Build full code from all 6 inputs
+                        const digits = [0, 1, 2, 3, 4, 5].map(j =>
+                          document.getElementById(`code-${j}`)?.value || ''
+                        ).join('');
+                        setCode(digits);
+                      }}
+                      onKeyDown={e => {
+                        if (e.key === 'Backspace' && !e.target.value && i > 0) {
+                          document.getElementById(`code-${i - 1}`)?.focus();
+                        }
+                      }}
+                      onPaste={e => {
+                        e.preventDefault();
+                        const paste = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 6);
+                        paste.split('').forEach((ch, j) => {
+                          const el = document.getElementById(`code-${j}`);
+                          if (el) el.value = ch;
+                        });
+                        setCode(paste);
+                        const nextEmpty = Math.min(paste.length, 5);
+                        document.getElementById(`code-${nextEmpty}`)?.focus();
+                      }}
+                      aria-label={`Digit ${i + 1}`}
+                    />
+                  ))}
+                </div>
+
+                {devCode && (
+                  <div className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
+                    🔧 {t('devCodeHint')}: <span className="font-mono font-bold" style={{ color: 'var(--gold)' }}>{devCode}</span>
+                  </div>
+                )}
+
+                {error && <div className="price-down text-xs text-center">{error}</div>}
+
+                <button type="submit" disabled={loading === 'verify' || code.length < 6}
+                  className="w-full py-3 rounded-xl text-sm font-bold transition-all min-h-[48px]"
+                  style={{
+                    background: 'var(--up-color)',
+                    color: 'white',
+                    opacity: (loading === 'verify' || code.length < 6) ? 0.5 : 1,
+                  }}>
+                  {loading === 'verify'
+                    ? <span className="animate-spin inline-block">⟳</span>
+                    : t('verify')}
+                </button>
+
+                {/* Resend */}
+                <div className="text-center text-xs" style={{ color: 'var(--text-muted)' }}>
+                  {countdown > 0 ? (
+                    <span>{t('resendIn')} {countdown}{t('seconds')}</span>
+                  ) : (
+                    <button type="button" onClick={handleResend}
+                      className="hover:underline" style={{ color: 'var(--up-color)' }}>
+                      {t('resend')}
+                    </button>
+                  )}
+                </div>
+
+                <button type="button" onClick={() => { setStep('email'); setError(''); setCode(''); }}
+                  className="text-xs text-center min-h-[44px]"
+                  style={{ color: 'var(--text-muted)' }}>
+                  ← {lang === 'zh' ? '更换邮箱' : 'Change email'}
+                </button>
+              </form>
+            )}
+
+            {/* Bottom */}
+            <div className="mt-6 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
+              {t('startWith')}
+            </div>
+          </div>
         </div>
       </div>
     </div>

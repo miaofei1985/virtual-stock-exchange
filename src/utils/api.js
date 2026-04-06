@@ -40,6 +40,15 @@ class ApiClient {
 
   logout() { this.setToken(null); }
 
+  // Email verification
+  sendVerificationCode(email) { return this.post('/auth/send-code', { email }); }
+  verifyCode(email, code) {
+    return this.post('/auth/verify-code', { email, code }).then(data => {
+      this.setToken(data.token);
+      return data;
+    });
+  }
+
   // Portfolio
   getPortfolio() { return this.get('/portfolio'); }
   trade(symbol, side, quantity, price) { return this.post('/trade', { symbol, side, quantity, price }); }

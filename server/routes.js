@@ -189,6 +189,62 @@ router.delete('/alerts/:id', auth, (req, res) => {
   res.json({ success: true });
 });
 
+// ===== Email Verification =====
+
+router.post('/auth/send-code', (req, res) => {
+  const { email } = req.body;
+  if (!email || !email.includes('@')) return res.status(400).json({ error: 'Invalid email' });
+
+  // Generate 6-digit code
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const expiresAt = Math.floor(Date.now() / 1000) + 600; // 10 minutes
+
+  // Invalidate old codes for this email
+  db.prepare("UPDATE verification_codes SET used = 1 WHERE email = ? AND used = 0").run(email);
+
+  // Store new code
+  db.prepare('INSERT INTO verification_codes (email, code, expires_at) VALUES (?, ?, ?)').run(email, code, expiresAt);
+
+  // In development: log the code and return it
+  console.log(`📧 Verification code for ${email}: ${code}`);
+  res.json({ success: true, message: 'Code sent', dev_code: code });
+});
+
+router.post('/auth/verify-code', (req, res) => {
+  const { email, code } = req.body;
+  if (!email || !code) return res.status(400).json({ error: 'Email and code required' });
+
+  const now = Math.floor(Date.now() / 1000);
+  const record = db.prepare("SELECT * FROM verification_codes WHERE email = ? AND code = ? AND used = 0 AND expires_at > ? ORDER BY created_at DESC LIMIT 1").get(email, code, now);
+
+  if (!record) return res.status(400).json({ error: 'Invalid or expired code' });
+
+  // Mark code as used
+  db.prepare("UPDATE verification_codes SET used = 1 WHERE id = ?").run(record.id);
+
+  // Check if user exists
+  let user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+
+  if (!user) {
+    // Auto-register: create user from email
+    const id = uuid();
+    const username = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '') || `user_${id.slice(0, 6)}`;
+    // Ensure unique username
+    let finalUsername = username;
+    let counter = 1;
+    while (db.prepare('SELECT id FROM users WHERE username = ?').get(finalUsername)) {
+      finalUsername = `${username}${counter++}`;
+    }
+    const hash = bcrypt.hashSync(code + id.slice(0, 8), 10); // pseudo-password from code
+    db.prepare('INSERT INTO users (id, username, email, password_hash, provider) VALUES (?, ?, ?, ?, ?)').run(id, finalUsername, email, hash, 'email');
+    db.prepare('INSERT INTO portfolios (user_id) VALUES (?)').run(id);
+    user = { id, username: finalUsername, email };
+  }
+
+  const token = jwt.sign({ id: user.id, username: user.username }, jwtSecret, { expiresIn: '30d' });
+  res.json({ token, user: { id: user.id, username: user.username, email: user.email } });
+});
+
 // ===== Market Data =====
 
 router.get('/stocks', (req, res) => {

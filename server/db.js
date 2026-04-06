@@ -24,7 +24,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS portfolios (
     user_id TEXT PRIMARY KEY REFERENCES users(id),
     balance REAL DEFAULT 1000000,
-    equity REAL DEFAULT 100000,
+    equity REAL DEFAULT 1000000,
     total_pnl REAL DEFAULT 0,
     updated_at INTEGER DEFAULT (unixepoch())
   );
@@ -66,7 +66,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS competitions (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
-    start_balance REAL DEFAULT 100000,
+    start_balance REAL DEFAULT 1000000,
     start_time INTEGER NOT NULL,
     end_time INTEGER NOT NULL,
     creator_id TEXT REFERENCES users(id),
@@ -78,8 +78,8 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     competition_id TEXT REFERENCES competitions(id),
     user_id TEXT REFERENCES users(id),
-    starting_balance REAL DEFAULT 100000,
-    equity REAL DEFAULT 100000,
+    starting_balance REAL DEFAULT 1000000,
+    equity REAL DEFAULT 1000000,
     pnl REAL DEFAULT 0,
     pnl_pct REAL DEFAULT 0,
     joined_at INTEGER DEFAULT (unixepoch()),
@@ -96,10 +96,20 @@ db.exec(`
     created_at INTEGER DEFAULT (unixepoch())
   );
 
+  CREATE TABLE IF NOT EXISTS verification_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL,
+    code TEXT NOT NULL,
+    expires_at INTEGER NOT NULL,
+    used INTEGER DEFAULT 0,
+    created_at INTEGER DEFAULT (unixepoch())
+  );
+
   CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
   CREATE INDEX IF NOT EXISTS idx_pending_user ON pending_orders(user_id);
   CREATE INDEX IF NOT EXISTS idx_positions_user ON positions(user_id);
   CREATE INDEX IF NOT EXISTS idx_alerts_user ON alerts(user_id);
+  CREATE INDEX IF NOT EXISTS idx_verification_email ON verification_codes(email, used);
 `);
 
 export default db;
