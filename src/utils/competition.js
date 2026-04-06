@@ -74,13 +74,16 @@ export function getLeaderboard(compId) {
 
 export function getCompetitionStatus(comp) {
   const now = Date.now();
-  if (now < comp.startTime) return 'upcoming';
-  if (now > comp.endTime) return 'ended';
+  const start = (comp.startTime || comp.start_time * 1000);
+  const end = (comp.endTime || comp.end_time * 1000);
+  if (now < start) return 'upcoming';
+  if (now > end) return 'ended';
   return 'active';
 }
 
 export function getTimeRemaining(comp) {
-  const remaining = comp.endTime - Date.now();
+  const end = (comp.endTime || comp.end_time * 1000);
+  const remaining = end - Date.now();
   if (remaining <= 0) return 'Ended';
   const days = Math.floor(remaining / 86400000);
   const hours = Math.floor((remaining % 86400000) / 3600000);

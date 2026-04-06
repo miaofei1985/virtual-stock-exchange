@@ -1,44 +1,48 @@
 import React, { useState, useEffect } from 'react';
 import {
-  getCompetitions, createCompetition, joinCompetition,
-  getLeaderboard, getCompetitionStatus, getTimeRemaining, saveCompetitions
+  getCompetitionStatus, getTimeRemaining
 } from '../utils/competition';
+import { api } from '../utils/api';
 
 export default function CompetitionPanel({ user, onClose }) {
-  const [comps, setComps] = useState(getCompetitions());
+  const [comps, setComps] = useState([]);
   const [view, setView] = useState('list'); // list | create | detail
   const [selected, setSelected] = useState(null);
   const [form, setForm] = useState({ name: '', durationDays: 7, startBalance: 100000 });
 
+  const fetchComps = async () => {
+    try {
+      const data = await api.getCompetitions();
+      setComps(data);
+    } catch {}
+  };
+
   useEffect(() => {
-    const timer = setInterval(() => setComps(getCompetitions()), 2000);
+    fetchComps();
+    const timer = setInterval(fetchComps, 2000);
     return () => clearInterval(timer);
   }, []);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!form.name.trim()) return;
-    const comp = createCompetition({
-      name: form.name,
-      durationDays: form.durationDays,
-      startBalance: form.startBalance,
-      creatorId: user.id,
-      creatorName: user.username,
-    });
-    joinCompetition(comp.id, user.id, user.username);
-    setComps(getCompetitions());
-    setSelected(comp.id);
-    setView('detail');
+    try {
+      const result = await api.createCompetition(form.name, form.startBalance, form.durationDays);
+      await fetchComps();
+      setSelected(result.id);
+      setView('detail');
+    } catch {}
   };
 
-  const handleJoin = (compId) => {
-    joinCompetition(compId, user.id, user.username);
-    setComps(getCompetitions());
+  const handleJoin = async (compId) => {
+    try {
+      await api.joinCompetition(compId);
+      await fetchComps();
+    } catch {}
   };
 
-  const handleDelete = (compId) => {
-    const updated = comps.filter(c => c.id !== compId);
-    saveCompetitions(updated);
-    setComps(updated);
+  const handleDelete = async (compId) => {
+    // Backend doesn't have delete endpoint yet, filter locally
+    setComps(prev => prev.filter(c => c.id !== compId));
   };
 
   const renderList = () => (
@@ -51,7 +55,7 @@ export default function CompetitionPanel({ user, onClose }) {
         <div className="text-center text-gray-600 py-8 text-sm">No competitions yet</div>
       ) : comps.map(comp => {
         const status = getCompetitionStatus(comp);
-        const joined = comp.participants.find(p => p.userId === user.id);
+        const joined = comp.participants.find(p => (p.userId || p.user_id) === user.id);
         return (
           <div key={comp.id} className="bg-dark-700 rounded border border-dark-500 p-3">
             <div className="flex items-center justify-between mb-2">
@@ -110,7 +114,7 @@ export default function CompetitionPanel({ user, onClose }) {
   const renderDetail = () => {
     const comp = comps.find(c => c.id === selected);
     if (!comp) return <div className="text-gray-500">Competition not found</div>;
-    const leaderboard = getLeaderboard(selected);
+    const leaderboard = [...(comp.participants || [])].sort((a, b) => (b.pnl_pct || 0) - (a.pnl_pct || 0));
     const status = getCompetitionStatus(comp);
 
     return (
@@ -129,23 +133,23 @@ export default function CompetitionPanel({ user, onClose }) {
         ) : (
           <div className="flex flex-col gap-1">
             {leaderboard.map((p, i) => (
-              <div key={p.userId}
+              <div key={p.user_id || p.userId}
                 className={`flex items-center justify-between px-3 py-2 rounded text-xs ${
                   i === 0 ? 'bg-yellow-500/10 border border-yellow-500/30' :
                   i === 1 ? 'bg-gray-400/10 border border-gray-400/20' :
                   i === 2 ? 'bg-orange-600/10 border border-orange-600/20' :
                   'bg-dark-700 border border-dark-600'
-                } ${p.userId === user.id ? 'ring-1 ring-up/50' : ''}`}>
+                } ${(p.user_id || p.userId) === user.id ? 'ring-1 ring-up/50' : ''}`}>
                 <div className="flex items-center gap-2">
                   <span className={`font-bold ${i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-orange-400' : 'text-gray-500'}`}>
                     {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
                   </span>
-                  <span className={p.userId === user.id ? 'text-up font-bold' : 'text-white'}>{p.username}</span>
+                  <span className={(p.user_id || p.userId) === user.id ? 'text-up font-bold' : 'text-white'}>{p.username}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-gray-400 font-mono">${p.equity.toLocaleString()}</span>
-                  <span className={`font-mono font-bold ${p.pnlPct >= 0 ? 'text-up' : 'text-down'}`}>
-                    {p.pnlPct >= 0 ? '+' : ''}{p.pnlPct}%
+                  <span className="text-gray-400 font-mono">${(p.equity || 0).toLocaleString()}</span>
+                  <span className={`font-mono font-bold ${(p.pnl_pct || p.pnlPct || 0) >= 0 ? 'text-up' : 'text-down'}`}>
+                    {(p.pnl_pct || p.pnlPct || 0) >= 0 ? '+' : ''}{(p.pnl_pct || p.pnlPct || 0)}%
                   </span>
                 </div>
               </div>
