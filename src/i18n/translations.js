@@ -29,7 +29,7 @@ export const translations = {
     continueWithGoogle: 'Continue with Google',
     continueWithGitHub: 'Continue with GitHub',
     or: 'or',
-    startWith: 'Start with $100,000 virtual cash · No real money',
+    startWith: 'Start with $1,000,000 virtual cash · No real money',
 
     // Watchlist
     marketWatch: 'Market Watch',
@@ -139,7 +139,7 @@ export const translations = {
     you: '(you)',
     return: 'Return',
     trades: 'Trades',
-    updatesEvery5s: 'Updates every 5 seconds · Starting capital: $100,000',
+    updatesEvery5s: 'Updates every 5 seconds · Starting capital: $1,000,000',
 
     // Competition
     tradingCompetitions: 'Trading Competitions',
@@ -214,7 +214,7 @@ export const translations = {
     continueWithGoogle: '使用 Google 登录',
     continueWithGitHub: '使用 GitHub 登录',
     or: '或',
-    startWith: '初始资金 $100,000 虚拟美元 · 不涉及真实资金',
+    startWith: '初始资金 $1,000,000 虚拟美元 · 不涉及真实资金',
 
     // 自选股
     marketWatch: '市场报价',
@@ -324,7 +324,7 @@ export const translations = {
     you: '（你）',
     return: '收益率',
     trades: '交易次数',
-    updatesEvery5s: '每 5 秒更新 · 初始资金 $100,000',
+    updatesEvery5s: '每 5 秒更新 · 初始资金 $1,000,000',
 
     // 竞赛
     tradingCompetitions: '交易竞赛',

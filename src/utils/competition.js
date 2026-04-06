@@ -15,7 +15,7 @@ export function createCompetition({ name, startBalance, durationDays, creatorId,
   const comp = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     name,
-    startBalance: startBalance || 100000,
+    startBalance: startBalance || 1000000,
     startTime: Date.now(),
     endTime: Date.now() + (durationDays || 7) * 86400000,
     durationDays: durationDays || 7,

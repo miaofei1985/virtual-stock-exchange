@@ -56,7 +56,7 @@ export default function Leaderboard({ currentUser, onClose }) {
               <tbody>
                 {board.map((entry, i) => {
                   const isMe = currentUser?.username === entry.username;
-                  const ret = +((entry.equity / 100000 - 1) * 100).toFixed(2);
+                  const ret = +((entry.equity / 1000000 - 1) * 100).toFixed(2);
                   return (
                     <tr key={i}
                       className={`border-b border-dark-700 transition-colors ${isMe ? 'bg-teal-900/20' : 'hover:bg-dark-700'}`}>

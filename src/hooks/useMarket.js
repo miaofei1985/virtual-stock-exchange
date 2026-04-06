@@ -4,7 +4,7 @@ import { loadPortfolio, savePortfolio } from '../utils/auth';
 import { useWebSocket } from './useWebSocket';
 import { api } from '../utils/api';
 
-const INITIAL_BALANCE = 100000;
+const INITIAL_BALANCE = 1000000;
 
 function initMarket() {
   return STOCKS.map(s => ({

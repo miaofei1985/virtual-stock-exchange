@@ -91,9 +91,9 @@ export function getLeaderboard() {
         username: u.username,
         avatar: u.avatar,
         provider: u.provider,
-        balance: p.balance || 100000,
+        balance: p.balance || 1000000,
         pnl: p.totalPnl || 0,
-        equity: p.equity || p.balance || 100000,
+        equity: p.equity || p.balance || 1000000,
         trades: p.orders?.length || 0,
       });
     } catch {}

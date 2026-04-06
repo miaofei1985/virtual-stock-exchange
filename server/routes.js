@@ -135,10 +135,10 @@ router.post('/competitions', auth, (req, res) => {
   const startTime = Math.floor(Date.now() / 1000);
   const endTime = startTime + (durationDays || 7) * 86400;
   db.prepare('INSERT INTO competitions (id, name, start_balance, start_time, end_time, creator_id) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(id, name, startBalance || 100000, startTime, endTime, req.user.id);
+    .run(id, name, startBalance || 1000000, startTime, endTime, req.user.id);
   // Auto-join creator
   db.prepare('INSERT INTO competition_participants (competition_id, user_id, starting_balance, equity) VALUES (?, ?, ?, ?)')
-    .run(id, req.user.id, startBalance || 100000, startBalance || 100000);
+    .run(id, req.user.id, startBalance || 1000000, startBalance || 1000000);
   res.json({ id, success: true });
 });
 

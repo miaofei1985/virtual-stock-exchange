@@ -8,7 +8,7 @@ export default function CompetitionPanel({ user, onClose }) {
   const [comps, setComps] = useState([]);
   const [view, setView] = useState('list');
   const [selected, setSelected] = useState(null);
-  const [form, setForm] = useState({ name: '', durationDays: 7, startBalance: 100000 });
+  const [form, setForm] = useState({ name: '', durationDays: 7, startBalance: 1000000 });
 
   const fetchComps = async () => {
     try { const data = await api.getCompetitions(); setComps(data); } catch {}
@@ -60,7 +60,7 @@ export default function CompetitionPanel({ user, onClose }) {
               }`}>{statusLabel(status)}</span>
             </div>
             <div className="flex gap-4 text-xs text-gray-400 mb-2">
-              <span>💰 ${(comp.start_balance || comp.startBalance || 100000).toLocaleString()}</span>
+              <span>💰 ${(comp.start_balance || comp.startBalance || 1000000).toLocaleString()}</span>
               <span>⏱ {getTimeRemaining(comp)}</span>
               <span>👥 {(comp.participants || []).length}</span>
             </div>
@@ -98,7 +98,7 @@ export default function CompetitionPanel({ user, onClose }) {
       <div>
         <label className="text-xs text-gray-500 block mb-1">{t('startingBalance')}</label>
         <input className="input-dark" type="number" min="1000" step="1000" value={form.startBalance}
-          onChange={e => setForm({...form, startBalance: parseInt(e.target.value) || 100000})} />
+          onChange={e => setForm({...form, startBalance: parseInt(e.target.value) || 1000000})} />
       </div>
       <button onClick={handleCreate} className="w-full py-2 bg-up text-white font-bold rounded text-sm hover:bg-up/80">
         {t('createAndJoin')}
@@ -121,7 +121,7 @@ export default function CompetitionPanel({ user, onClose }) {
             status === 'active' ? 'bg-up/20 text-up' : 'bg-down/20 text-down'
           }`}>{statusLabel(status)} · {getTimeRemaining(comp)}</span>
         </div>
-        <div className="text-xs text-gray-500">{t('starting')}: ${(comp.start_balance || comp.startBalance || 100000).toLocaleString()} · {(comp.participants || []).length} {t('participants')}</div>
+        <div className="text-xs text-gray-500">{t('starting')}: ${(comp.start_balance || comp.startBalance || 1000000).toLocaleString()} · {(comp.participants || []).length} {t('participants')}</div>
 
         {leaderboard.length === 0 ? (
           <div className="text-center text-gray-600 py-4">{t('noParticipants')}</div>
