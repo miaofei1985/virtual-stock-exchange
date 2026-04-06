@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { registerEmail, loginEmail, loginOAuth } from '../utils/auth';
+import { loginOAuth, saveSession } from '../utils/auth';
+import { api } from '../utils/api';
 
 const GithubIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
@@ -28,10 +29,14 @@ export default function AuthModal({ onAuth }) {
     e.preventDefault();
     setError('');
     try {
-      const user = mode === 'register'
-        ? registerEmail(email, password, username)
-        : loginEmail(email, password);
-      onAuth(user);
+      let data;
+      if (mode === 'register') {
+        data = await api.register(username, email, password);
+      } else {
+        data = await api.login(username || email.split('@')[0], password);
+      }
+      saveSession(data.user);
+      onAuth(data.user);
     } catch (err) {
       setError(err.message);
     }
@@ -97,8 +102,14 @@ export default function AuthModal({ onAuth }) {
             <input className="input-dark" placeholder="Username" value={username}
               onChange={e => setUsername(e.target.value)} required minLength={2} />
           )}
-          <input className="input-dark" type="email" placeholder="Email address" value={email}
-            onChange={e => setEmail(e.target.value)} required />
+          {mode === 'login' && (
+            <input className="input-dark" placeholder="Username" value={username}
+              onChange={e => setUsername(e.target.value)} required />
+          )}
+          {mode === 'register' && (
+            <input className="input-dark" type="email" placeholder="Email address" value={email}
+              onChange={e => setEmail(e.target.value)} required />
+          )}
           <input className="input-dark" type="password" placeholder="Password" value={password}
             onChange={e => setPassword(e.target.value)} required minLength={6} />
 
