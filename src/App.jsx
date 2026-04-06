@@ -10,12 +10,14 @@ import AuthModal from './components/AuthModal';
 import Leaderboard from './components/Leaderboard';
 import AlertsPanel from './components/AlertsPanel';
 import PendingOrders from './components/PendingOrders';
+import CompetitionPanel from './components/CompetitionPanel';
 import { getCurrentUser, logout } from './utils/auth';
 
 export default function App() {
   const [user, setUser] = useState(() => getCurrentUser());
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showAlerts, setShowAlerts] = useState(false);
+  const [showCompetition, setShowCompetition] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const {
@@ -87,10 +89,10 @@ export default function App() {
 
           {/* Leaderboard button */}
           <button
-            onClick={() => setShowLeaderboard(true)}
+            onClick={() => setShowCompetition(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-dark-600 hover:bg-dark-500 border border-dark-400 rounded text-xs text-gray-300 transition-all"
           >
-            🏆 Rank
+            🏆 Competition
           </button>
 
           {/* User menu */}
@@ -117,9 +119,9 @@ export default function App() {
                     <div className="text-xs text-gray-600 mt-0.5 capitalize">{user.provider}</div>
                   </div>
                   <button
-                    onClick={() => setShowLeaderboard(true)}
+                    onClick={() => setShowCompetition(true)}
                     className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-dark-600">
-                    🏆 Leaderboard
+                    🏆 Competition
                   </button>
                   <button
                     onClick={() => setShowAlerts(true)}
@@ -173,6 +175,9 @@ export default function App() {
       {/* Modals */}
       {showLeaderboard && (
         <Leaderboard currentUser={user} onClose={() => setShowLeaderboard(false)} />
+      )}
+      {showCompetition && (
+        <CompetitionPanel user={user} onClose={() => setShowCompetition(false)} />
       )}
       {showAlerts && user && (
         <AlertsPanel
