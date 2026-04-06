@@ -113,6 +113,12 @@ export default function App() {
             🔔
           </button>
 
+          <button onClick={() => setShowLeaderboard(true)}
+            className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
+            🏅
+          </button>
+
           <button onClick={() => setShowCompetition(true)}
             className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hidden sm:flex"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
