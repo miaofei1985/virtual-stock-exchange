@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background: #0d0d0f;
+  color: #e0e0e0;
+  font-family: 'JetBrains Mono', monospace;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.price-up { color: #26a69a; }
+.price-down { color: #ef5350; }
+.price-neutral { color: #888; }
+
+.btn-buy {
+  background: #26a69a;
+  color: white;
+  border: none;
+  padding: 8px 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.15s;
+}
+.btn-buy:hover { background: #2bbbad; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(38,166,154,0.4); }
+
+.btn-sell {
+  background: #ef5350;
+  color: white;
+  border: none;
+  padding: 8px 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.15s;
+}
+.btn-sell:hover { background: #f44336; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(239,83,80,0.4); }
+
+.ticker-row:hover { background: rgba(255,255,255,0.04); cursor: pointer; }
+.ticker-row.active { background: rgba(38,166,154,0.12); border-left: 2px solid #26a69a; }
+
+.input-dark {
+  background: #22222a;
+  border: 1px solid #3a3a48;
+  color: #e0e0e0;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  width: 100%;
+}
+.input-dark:focus { border-color: #26a69a; }
+
+.tab-btn { padding: 4px 12px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: all 0.15s; color: #888; background: transparent; border: 1px solid transparent; }
+.tab-btn.active { background: #22222a; color: #e0e0e0; border-color: #3a3a48; }
+.tab-btn:hover:not(.active) { color: #ccc; }
+
+@keyframes flash-up { 0%,100%{background:transparent} 50%{background:rgba(38,166,154,0.25)} }
+@keyframes flash-down { 0%,100%{background:transparent} 50%{background:rgba(239,83,80,0.25)} }
+.flash-up { animation: flash-up 0.4s ease; }
+.flash-down { animation: flash-down 0.4s ease; }
+
+.order-book-row { display: grid; grid-template-columns: 1fr 1fr 1fr; font-size: 11px; padding: 2px 8px; }
