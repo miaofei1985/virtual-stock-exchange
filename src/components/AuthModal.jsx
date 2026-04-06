@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { loginOAuth, saveSession } from '../utils/auth';
 import { api } from '../utils/api';
+import { useLang } from '../i18n/LanguageContext';
 
 const GithubIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
@@ -18,7 +19,8 @@ const GoogleIcon = () => (
 );
 
 export default function AuthModal({ onAuth }) {
-  const [mode, setMode] = useState('login'); // 'login' | 'register'
+  const { t } = useLang();
+  const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
@@ -45,7 +47,6 @@ export default function AuthModal({ onAuth }) {
   const handleOAuth = (provider) => {
     setLoading(provider);
     setError('');
-    // Simulate network delay for realism
     setTimeout(() => {
       try {
         const user = loginOAuth(provider);
@@ -60,79 +61,67 @@ export default function AuthModal({ onAuth }) {
   return (
     <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
       <div className="bg-dark-800 border border-dark-400 rounded-xl w-full max-w-sm shadow-2xl">
-        {/* Header */}
         <div className="px-6 pt-8 pb-4 text-center">
-          <div className="text-3xl font-bold text-gold tracking-wider mb-1">VSE</div>
-          <div className="text-gray-400 text-xs tracking-widest uppercase">Virtual Stock Exchange</div>
+          <div className="text-3xl font-bold text-gold tracking-wider mb-1">{t('vse')}</div>
+          <div className="text-gray-400 text-xs tracking-widest uppercase">{t('vseFullName')}</div>
           <div className="mt-4 text-white font-semibold">
-            {mode === 'login' ? 'Sign in to trade' : 'Create account'}
+            {mode === 'login' ? t('signInToTrade') : t('createAccount')}
           </div>
         </div>
 
-        {/* OAuth Buttons */}
         <div className="px-6 flex flex-col gap-2">
-          <button
-            onClick={() => handleOAuth('google')}
-            disabled={!!loading}
-            className="flex items-center justify-center gap-2.5 w-full py-2.5 bg-dark-700 border border-dark-400 hover:border-gray-500 rounded-lg text-sm text-white transition-all disabled:opacity-50"
-          >
+          <button onClick={() => handleOAuth('google')} disabled={!!loading}
+            className="flex items-center justify-center gap-2.5 w-full py-2.5 bg-dark-700 border border-dark-400 hover:border-gray-500 rounded-lg text-sm text-white transition-all disabled:opacity-50">
             {loading === 'google' ? <span className="animate-spin text-xs">⟳</span> : <GoogleIcon />}
-            Continue with Google
+            {t('continueWithGoogle')}
           </button>
-          <button
-            onClick={() => handleOAuth('github')}
-            disabled={!!loading}
-            className="flex items-center justify-center gap-2.5 w-full py-2.5 bg-dark-700 border border-dark-400 hover:border-gray-500 rounded-lg text-sm text-white transition-all disabled:opacity-50"
-          >
+          <button onClick={() => handleOAuth('github')} disabled={!!loading}
+            className="flex items-center justify-center gap-2.5 w-full py-2.5 bg-dark-700 border border-dark-400 hover:border-gray-500 rounded-lg text-sm text-white transition-all disabled:opacity-50">
             {loading === 'github' ? <span className="animate-spin text-xs">⟳</span> : <GithubIcon />}
-            Continue with GitHub
+            {t('continueWithGitHub')}
           </button>
         </div>
 
-        {/* Divider */}
         <div className="flex items-center gap-3 px-6 my-4">
           <div className="flex-1 h-px bg-dark-400" />
-          <span className="text-xs text-gray-500">or</span>
+          <span className="text-xs text-gray-500">{t('or')}</span>
           <div className="flex-1 h-px bg-dark-400" />
         </div>
 
-        {/* Email Form */}
         <form onSubmit={handleEmail} className="px-6 flex flex-col gap-3">
           {mode === 'register' && (
-            <input className="input-dark" placeholder="Username" value={username}
+            <input className="input-dark" placeholder={t('username')} value={username}
               onChange={e => setUsername(e.target.value)} required minLength={2} />
           )}
           {mode === 'login' && (
-            <input className="input-dark" placeholder="Username" value={username}
+            <input className="input-dark" placeholder={t('username')} value={username}
               onChange={e => setUsername(e.target.value)} required />
           )}
           {mode === 'register' && (
-            <input className="input-dark" type="email" placeholder="Email address" value={email}
+            <input className="input-dark" type="email" placeholder={t('emailAddress')} value={email}
               onChange={e => setEmail(e.target.value)} required />
           )}
-          <input className="input-dark" type="password" placeholder="Password" value={password}
+          <input className="input-dark" type="password" placeholder={t('password')} value={password}
             onChange={e => setPassword(e.target.value)} required minLength={6} />
 
           {error && <div className="text-down text-xs text-center">{error}</div>}
 
           <button type="submit"
             className="w-full py-2.5 bg-up hover:bg-teal-500 text-white rounded-lg text-sm font-bold transition-all">
-            {mode === 'login' ? 'Sign In' : 'Create Account'}
+            {mode === 'login' ? t('signIn') : t('createAccount')}
           </button>
         </form>
 
-        {/* Switch mode */}
         <div className="px-6 py-5 text-center text-xs text-gray-500">
           {mode === 'login' ? (
-            <>No account? <button className="text-up hover:underline" onClick={() => { setMode('register'); setError(''); }}>Register</button></>
+            <>{t('noAccount')} <button className="text-up hover:underline" onClick={() => { setMode('register'); setError(''); }}>{t('register')}</button></>
           ) : (
-            <>Already registered? <button className="text-up hover:underline" onClick={() => { setMode('login'); setError(''); }}>Sign in</button></>
+            <>{t('alreadyRegistered')} <button className="text-up hover:underline" onClick={() => { setMode('login'); setError(''); }}>{t('signIn')}</button></>
           )}
         </div>
 
-        {/* Demo note */}
         <div className="px-6 pb-4 text-center text-xs text-gray-600">
-          Start with $100,000 virtual cash · No real money
+          {t('startWith')}
         </div>
       </div>
     </div>

@@ -2,10 +2,23 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createChart, CrosshairMode } from 'lightweight-charts';
 import { calcSMA, calcEMA, calcBollinger, calcRSI, calcMACD, calcVolume, calcATR, calcStochastic, calcVWAP } from '../utils/indicators';
 import { TIMEFRAMES } from '../data/stocks';
-
-const INDICATOR_OPTIONS = ['Volume', 'SMA 20', 'EMA 9', 'EMA 21', 'Bollinger', 'RSI', 'MACD', 'ATR', 'Stochastic', 'VWAP'];
+import { useLang } from '../i18n/LanguageContext';
 
 export default function Chart({ stock, timeframe, setTimeframe, theme }) {
+  const { t } = useLang();
+  const INDICATOR_OPTIONS = [
+    { key: 'Volume', label: t('volume') },
+    { key: 'SMA 20', label: t('sma20') },
+    { key: 'EMA 9', label: t('ema9') },
+    { key: 'EMA 21', label: t('ema21') },
+    { key: 'Bollinger', label: t('bollinger') },
+    { key: 'RSI', label: t('rsi') },
+    { key: 'MACD', label: t('macd') },
+    { key: 'ATR', label: t('atr') },
+    { key: 'Stochastic', label: t('stochastic') },
+    { key: 'VWAP', label: t('vwap') },
+  ];
+
   const containerRef = useRef(null);
   const chartRef = useRef(null);
   const candleSeriesRef = useRef(null);
@@ -15,8 +28,8 @@ export default function Chart({ stock, timeframe, setTimeframe, theme }) {
   const [crosshairData, setCrosshairData] = useState(null);
   const isDark = theme === 'dark';
 
-  const toggleIndicator = (ind) => {
-    setIndicators(prev => prev.includes(ind) ? prev.filter(i => i !== ind) : [...prev, ind]);
+  const toggleIndicator = (key) => {
+    setIndicators(prev => prev.includes(key) ? prev.filter(i => i !== key) : [...prev, key]);
   };
 
   const colors = {
@@ -196,16 +209,16 @@ export default function Chart({ stock, timeframe, setTimeframe, theme }) {
         <div className="w-px h-4 bg-divider mx-1" />
         <div className="flex gap-1 flex-wrap">
           {INDICATOR_OPTIONS.map(ind => (
-            <button key={ind} className={`tab-btn text-xs ${indicators.includes(ind) ? 'active' : ''}`}
-              onClick={() => toggleIndicator(ind)}>{ind}</button>
+            <button key={ind.key} className={`tab-btn text-xs ${indicators.includes(ind.key) ? 'active' : ''}`}
+              onClick={() => toggleIndicator(ind.key)}>{ind.label}</button>
           ))}
         </div>
         {crosshairData && (
           <div className="ml-auto flex gap-3 text-xs font-mono hidden md:flex">
-            <span>O: <span className={crosshairData.open <= crosshairData.close ? 'price-up' : 'price-down'}>${crosshairData.open}</span></span>
-            <span>H: <span className="price-up">${crosshairData.high}</span></span>
-            <span>L: <span className="price-down">${crosshairData.low}</span></span>
-            <span>C: <span className={crosshairData.open <= crosshairData.close ? 'price-up' : 'price-down'}>${crosshairData.close}</span></span>
+            <span>{t('open')}: <span className={crosshairData.open <= crosshairData.close ? 'price-up' : 'price-down'}>${crosshairData.open}</span></span>
+            <span>{t('high')}: <span className="price-up">${crosshairData.high}</span></span>
+            <span>{t('low')}: <span className="price-down">${crosshairData.low}</span></span>
+            <span>{t('close')}: <span className={crosshairData.open <= crosshairData.close ? 'price-up' : 'price-down'}>${crosshairData.close}</span></span>
           </div>
         )}
       </div>

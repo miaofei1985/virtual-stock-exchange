@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getLeaderboard } from '../utils/auth';
+import { useLang } from '../i18n/LanguageContext';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -17,6 +18,7 @@ const ProviderBadge = ({ provider }) => {
 };
 
 export default function Leaderboard({ currentUser, onClose }) {
+  const { t } = useLang();
   const [board, setBoard] = useState([]);
 
   useEffect(() => {
@@ -28,31 +30,27 @@ export default function Leaderboard({ currentUser, onClose }) {
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
       <div className="bg-dark-800 border border-dark-400 rounded-xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[80vh]">
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-dark-500">
           <div>
-            <div className="text-white font-bold text-lg">🏆 Leaderboard</div>
-            <div className="text-gray-500 text-xs mt-0.5">Ranked by total equity</div>
+            <div className="text-white font-bold text-lg">🏆 {t('leaderboardTitle')}</div>
+            <div className="text-gray-500 text-xs mt-0.5">{t('rankedByEquity')}</div>
           </div>
           <button onClick={onClose} className="text-gray-500 hover:text-white text-xl px-2">✕</button>
         </div>
 
-        {/* Table */}
         <div className="overflow-y-auto flex-1">
           {board.length === 0 ? (
-            <div className="flex items-center justify-center py-16 text-gray-600">
-              No traders yet — be the first!
-            </div>
+            <div className="flex items-center justify-center py-16 text-gray-600">{t('noTradersYet')}</div>
           ) : (
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-dark-800">
                 <tr className="text-gray-500 text-xs border-b border-dark-600">
                   <th className="px-4 py-2 text-left w-10">#</th>
-                  <th className="px-4 py-2 text-left">Trader</th>
-                  <th className="px-4 py-2 text-right">Equity</th>
-                  <th className="px-4 py-2 text-right">P&L</th>
-                  <th className="px-4 py-2 text-right">Return</th>
-                  <th className="px-4 py-2 text-right">Trades</th>
+                  <th className="px-4 py-2 text-left">{t('trade')}</th>
+                  <th className="px-4 py-2 text-right">{t('totalEquity')}</th>
+                  <th className="px-4 py-2 text-right">{t('pnlLabel')}</th>
+                  <th className="px-4 py-2 text-right">{t('return')}</th>
+                  <th className="px-4 py-2 text-right">{t('trades')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -75,7 +73,7 @@ export default function Leaderboard({ currentUser, onClose }) {
                           <div>
                             <div className="text-white font-semibold flex items-center gap-1.5">
                               {entry.username}
-                              {isMe && <span className="text-xs text-up">(you)</span>}
+                              {isMe && <span className="text-xs text-up">{t('you')}</span>}
                             </div>
                             <ProviderBadge provider={entry.provider} />
                           </div>
@@ -99,9 +97,8 @@ export default function Leaderboard({ currentUser, onClose }) {
           )}
         </div>
 
-        {/* Footer */}
         <div className="px-6 py-3 border-t border-dark-600 text-xs text-gray-600 text-center">
-          Updates every 5 seconds · Starting capital: $100,000
+          {t('updatesEvery5s')}
         </div>
       </div>
     </div>

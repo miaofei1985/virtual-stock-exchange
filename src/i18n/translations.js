@@ -1,0 +1,375 @@
+export const translations = {
+  en: {
+    // Top bar
+    vse: 'VSE',
+    vseFullName: 'Virtual Stock Exchange',
+    live: 'LIVE',
+    cash: 'Cash',
+    pnl: 'P&L',
+
+    // Theme
+    switchToLight: 'Switch to Light',
+    switchToDark: 'Switch to Dark',
+
+    // Navigation
+    alerts: 'Alerts',
+    competition: 'Competition',
+    leaderboard: 'Leaderboard',
+
+    // Auth
+    signInToTrade: 'Sign in to trade',
+    createAccount: 'Create Account',
+    username: 'Username',
+    emailAddress: 'Email address',
+    password: 'Password',
+    signIn: 'Sign In',
+    register: 'Register',
+    noAccount: 'No account?',
+    alreadyRegistered: 'Already registered?',
+    continueWithGoogle: 'Continue with Google',
+    continueWithGitHub: 'Continue with GitHub',
+    or: 'or',
+    startWith: 'Start with $100,000 virtual cash · No real money',
+
+    // Watchlist
+    marketWatch: 'Market Watch',
+    symbol: 'Symbol',
+    price: 'Price',
+    chgPct: 'Chg%',
+
+    // Chart
+    volume: 'Volume',
+    sma20: 'SMA 20',
+    ema9: 'EMA 9',
+    ema21: 'EMA 21',
+    bollinger: 'Bollinger',
+    rsi: 'RSI',
+    macd: 'MACD',
+    atr: 'ATR',
+    stochastic: 'Stochastic',
+    vwap: 'VWAP',
+    open: 'O',
+    high: 'H',
+    low: 'L',
+    close: 'C',
+
+    // Order Book
+    orderBook: 'Order Book',
+    vol: 'Volume',
+    total: 'Total',
+    spread: 'Spread',
+
+    // Trade Panel
+    trade: 'Trade',
+    bid: 'BID',
+    ask: 'ASK',
+    buy: 'BUY',
+    sell: 'SELL',
+    market: 'Market',
+    limit: 'Limit',
+    stop: 'Stop',
+    orderType: 'Order Type',
+    buyBelowPrice: 'Buy below price',
+    sellAbovePrice: 'Sell above price',
+    buyAbovePrice: 'Buy above price',
+    sellBelowPrice: 'Sell below price',
+    quantity: 'Quantity (shares)',
+    pct25: '25%',
+    pct50: '50%',
+    pct75: '75%',
+    pct100: '100%',
+    insufficientFunds: 'Insufficient funds — need',
+    notEnoughShares: 'Not enough shares (have',
+    bought: 'Bought',
+    sold: 'Sold',
+    pnlLabel: 'P&L',
+    openPosition: 'Open Position',
+    shares: 'Shares',
+    avgCost: 'Avg Cost',
+    value: 'Value',
+    unrPnl: 'Unr. P&L',
+    cashBalance: 'Cash Balance',
+    unrealizedPnl: 'Unrealized P&L',
+
+    // Portfolio
+    portfolio: 'Portfolio',
+    totalEquity: 'Total Equity',
+    cash2: 'Cash',
+    unrPnl2: 'Unr. P&L',
+    positions: 'Positions',
+    history: 'History',
+    noOpenPositions: 'No open positions',
+    noTradeHistory: 'No trade history',
+    time: 'Time',
+    side: 'Side',
+    qty: 'Qty',
+
+    // Pending Orders
+    pendingOrders: 'Pending Orders',
+    limitBuy: 'Limit Buy',
+    limitSell: 'Limit Sell',
+    stopBuy: 'Stop Buy',
+    stopSell: 'Stop Sell',
+    orderCancelled: 'Order cancelled',
+    orderPlaced: 'placed',
+    orderFilled: 'filled',
+
+    // Alerts Panel
+    priceAlertsStopLoss: 'Price Alerts & Stop Loss',
+    getNotified: 'Get notified when prices hit your targets',
+    newAlert: 'New Alert',
+    alertType: 'Alert Type',
+    priceAbove: 'Price Above ▲',
+    priceBelow: 'Price Below ▼',
+    stopLoss: 'Stop Loss 🛑',
+    takeProfit: 'Take Profit 🎯',
+    targetPrice: 'Target Price',
+    now: 'now',
+    note: 'Note (optional)',
+    supportLevel: 'e.g. Support level',
+    addAlert: '+ Add Alert',
+    noAlerts: 'No alerts set. Add one above.',
+    triggered: '✓ Triggered',
+    enterValidPrice: 'Enter a valid price',
+
+    // Leaderboard
+    leaderboardTitle: 'Leaderboard',
+    rankedByEquity: 'Ranked by total equity',
+    noTradersYet: 'No traders yet — be the first!',
+    you: '(you)',
+    return: 'Return',
+    trades: 'Trades',
+    updatesEvery5s: 'Updates every 5 seconds · Starting capital: $100,000',
+
+    // Competition
+    tradingCompetitions: 'Trading Competitions',
+    createCompetition: '+ Create Competition',
+    noCompetitions: 'No competitions yet',
+    competitionName: 'Competition Name',
+    duration: 'Duration (days)',
+    startingBalance: 'Starting Balance ($)',
+    createAndJoin: '🚀 Create & Join',
+    join: 'Join',
+    active: 'active',
+    ended: 'ended',
+    upcoming: 'upcoming',
+    noParticipants: 'No participants yet',
+    participants: 'traders',
+    starting: 'Starting',
+
+    // Status bar
+    connected: '📡 Connected',
+    symbols: 'symbols',
+    pending: 'pending',
+    equity: 'Equity',
+    signOut: '⎋ Sign Out',
+    myAlerts: '🔔 My Alerts',
+
+    // Toast
+    alertTriggered: '🔔 Alert triggered!',
+    invalidOrderParams: 'Invalid order parameters',
+    invalidQuantity: 'Invalid quantity',
+
+    // Sector labels
+    sectorTechnology: 'Technology',
+    sectorEV: 'EV',
+    sectorSemiconductors: 'Semiconductors',
+    sectorECommerce: 'E-Commerce',
+    sectorSocialMedia: 'Social Media',
+    sectorStreaming: 'Streaming',
+    sectorCrypto: 'Crypto',
+    sectorETF: 'ETF',
+
+    // Competitions
+    weeklyTradingChallenge: 'Weekly Trading Challenge',
+  },
+
+  zh: {
+    // 顶栏
+    vse: 'VSE',
+    vseFullName: '虚拟证券交易所',
+    live: '实时',
+    cash: '现金',
+    pnl: '盈亏',
+
+    // 主题
+    switchToLight: '切换到浅色',
+    switchToDark: '切换到深色',
+
+    // 导航
+    alerts: '提醒',
+    competition: '竞赛',
+    leaderboard: '排行榜',
+
+    // 登录
+    signInToTrade: '登录开始交易',
+    createAccount: '创建账户',
+    username: '用户名',
+    emailAddress: '邮箱地址',
+    password: '密码',
+    signIn: '登录',
+    register: '注册',
+    noAccount: '没有账户？',
+    alreadyRegistered: '已有账户？',
+    continueWithGoogle: '使用 Google 登录',
+    continueWithGitHub: '使用 GitHub 登录',
+    or: '或',
+    startWith: '初始资金 $100,000 虚拟美元 · 不涉及真实资金',
+
+    // 自选股
+    marketWatch: '市场报价',
+    symbol: '代码',
+    price: '价格',
+    chgPct: '涨跌%',
+
+    // 图表
+    volume: '成交量',
+    sma20: 'SMA 20',
+    ema9: 'EMA 9',
+    ema21: 'EMA 21',
+    bollinger: '布林带',
+    rsi: 'RSI',
+    macd: 'MACD',
+    atr: 'ATR',
+    stochastic: '随机指标',
+    vwap: 'VWAP',
+    open: '开',
+    high: '高',
+    low: '低',
+    close: '收',
+
+    // 订单簿
+    orderBook: '订单簿',
+    vol: '数量',
+    total: '总额',
+    spread: '价差',
+
+    // 交易面板
+    trade: '交易',
+    bid: '买价',
+    ask: '卖价',
+    buy: '买入',
+    sell: '卖出',
+    market: '市价',
+    limit: '限价',
+    stop: '止损',
+    orderType: '订单类型',
+    buyBelowPrice: '低于此价买入',
+    sellAbovePrice: '高于此价卖出',
+    buyAbovePrice: '高于此价买入',
+    sellBelowPrice: '低于此价卖出',
+    quantity: '数量（股）',
+    pct25: '25%',
+    pct50: '50%',
+    pct75: '75%',
+    pct100: '100%',
+    insufficientFunds: '资金不足 — 需要',
+    notEnoughShares: '持仓不足（持有',
+    bought: '买入',
+    sold: '卖出',
+    pnlLabel: '盈亏',
+    openPosition: '当前持仓',
+    shares: '股数',
+    avgCost: '均价',
+    value: '市值',
+    unrPnl: '浮动盈亏',
+    cashBalance: '可用资金',
+    unrealizedPnl: '浮动盈亏',
+
+    // 投资组合
+    portfolio: '投资组合',
+    totalEquity: '总资产',
+    cash2: '现金',
+    unrPnl2: '浮动盈亏',
+    positions: '持仓',
+    history: '历史',
+    noOpenPositions: '暂无持仓',
+    noTradeHistory: '暂无交易记录',
+    time: '时间',
+    side: '方向',
+    qty: '数量',
+
+    // 挂单
+    pendingOrders: '挂单',
+    limitBuy: '限价买入',
+    limitSell: '限价卖出',
+    stopBuy: '止损买入',
+    stopSell: '止损卖出',
+    orderCancelled: '订单已取消',
+    orderPlaced: '已挂单',
+    orderFilled: '已成交',
+
+    // 提醒面板
+    priceAlertsStopLoss: '价格提醒与止损',
+    getNotified: '价格达到目标时通知你',
+    newAlert: '新建提醒',
+    alertType: '提醒类型',
+    priceAbove: '价格上方 ▲',
+    priceBelow: '价格下方 ▼',
+    stopLoss: '止损 🛑',
+    takeProfit: '止盈 🎯',
+    targetPrice: '目标价格',
+    now: '当前',
+    note: '备注（可选）',
+    supportLevel: '例如：支撑位',
+    addAlert: '+ 添加提醒',
+    noAlerts: '暂无提醒，在上方添加',
+    triggered: '✓ 已触发',
+    enterValidPrice: '请输入有效价格',
+
+    // 排行榜
+    leaderboardTitle: '排行榜',
+    rankedByEquity: '按总资产排名',
+    noTradersYet: '暂无交易者 — 成为第一个！',
+    you: '（你）',
+    return: '收益率',
+    trades: '交易次数',
+    updatesEvery5s: '每 5 秒更新 · 初始资金 $100,000',
+
+    // 竞赛
+    tradingCompetitions: '交易竞赛',
+    createCompetition: '+ 创建竞赛',
+    noCompetitions: '暂无竞赛',
+    competitionName: '竞赛名称',
+    duration: '持续天数',
+    startingBalance: '初始资金 ($)',
+    createAndJoin: '🚀 创建并加入',
+    join: '加入',
+    active: '进行中',
+    ended: '已结束',
+    upcoming: '未开始',
+    noParticipants: '暂无参与者',
+    participants: '位交易者',
+    starting: '初始',
+
+    // 状态栏
+    connected: '📡 已连接',
+    symbols: '个交易品种',
+    pending: '个挂单',
+    equity: '资产',
+    signOut: '⎋ 退出登录',
+    myAlerts: '🔔 我的提醒',
+
+    // 通知
+    alertTriggered: '🔔 价格提醒已触发！',
+    invalidOrderParams: '订单参数无效',
+    invalidQuantity: '数量无效',
+
+    // 行业标签
+    sectorTechnology: '科技',
+    sectorEV: '电动车',
+    sectorSemiconductors: '半导体',
+    sectorECommerce: '电商',
+    sectorSocialMedia: '社交媒体',
+    sectorStreaming: '流媒体',
+    sectorCrypto: '加密货币',
+    sectorETF: 'ETF',
+
+    // 竞赛
+    weeklyTradingChallenge: '每周交易挑战赛',
+  }
+};
+
+export function t(lang, key) {
+  return translations[lang]?.[key] || translations.en[key] || key;
+}

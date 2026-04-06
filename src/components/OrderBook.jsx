@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useLang } from '../i18n/LanguageContext';
 
 function generateBook(midPrice, spread) {
   const asks = [], bids = [];
@@ -16,6 +17,7 @@ function generateBook(midPrice, spread) {
 }
 
 export default function OrderBook({ stock }) {
+  const { t } = useLang();
   const { asks, bids } = useMemo(() => {
     if (!stock) return { asks: [], bids: [] };
     const spread = stock.ask - stock.bid;
@@ -29,14 +31,11 @@ export default function OrderBook({ stock }) {
   return (
     <div className="flex flex-col h-full bg-dark-800 border-r border-dark-500">
       <div className="px-3 py-2 border-b border-dark-500 text-xs text-gray-400 uppercase tracking-widest font-semibold">
-        Order Book
+        {t('orderBook')}
       </div>
-      {/* Column header */}
       <div className="order-book-row text-gray-500 py-1 border-b border-dark-600">
-        <span>Price</span><span className="text-right">Volume</span><span className="text-right">Total</span>
+        <span>{t('price')}</span><span className="text-right">{t('vol')}</span><span className="text-right">{t('total')}</span>
       </div>
-
-      {/* Asks (sell side) */}
       <div className="flex-1 overflow-hidden flex flex-col-reverse">
         {asks.slice(0, 7).reverse().map((row, i) => (
           <div key={i} className="order-book-row relative py-0.5">
@@ -47,14 +46,10 @@ export default function OrderBook({ stock }) {
           </div>
         ))}
       </div>
-
-      {/* Spread */}
       <div className="flex items-center justify-between px-2 py-1 bg-dark-700 border-y border-dark-500">
         <span className="text-xs font-bold text-white">{stock.currentPrice.toFixed(2)}</span>
-        <span className="text-xs text-gray-500">Spread: {(stock.ask - stock.bid).toFixed(2)}</span>
+        <span className="text-xs text-gray-500">{t('spread')}: {(stock.ask - stock.bid).toFixed(2)}</span>
       </div>
-
-      {/* Bids (buy side) */}
       <div className="flex-1 overflow-hidden">
         {bids.slice(0, 7).map((row, i) => (
           <div key={i} className="order-book-row relative py-0.5">

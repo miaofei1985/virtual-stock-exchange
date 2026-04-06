@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useMarket } from './hooks/useMarket';
+import { useLang } from './i18n/LanguageContext';
 import Watchlist from './components/Watchlist';
 import Chart from './components/Chart';
 import OrderBook from './components/OrderBook';
@@ -14,6 +15,7 @@ import CompetitionPanel from './components/CompetitionPanel';
 import { getCurrentUser, logout } from './utils/auth';
 
 export default function App() {
+  const { t, lang, toggleLang } = useLang();
   const [user, setUser] = useState(() => getCurrentUser());
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showAlerts, setShowAlerts] = useState(false);
@@ -30,13 +32,11 @@ export default function App() {
     pendingOrders, placePendingOrder, cancelPendingOrder,
   } = useMarket(user);
 
-  // Apply theme
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('vse_theme', theme);
   }, [theme]);
 
-  // Close user menu on outside click
   useEffect(() => {
     if (!userMenuOpen) return;
     const handler = () => setUserMenuOpen(false);
@@ -46,7 +46,7 @@ export default function App() {
 
   const handleAuth = (u) => setUser(u);
   const handleLogout = () => { logout(); setUser(null); setUserMenuOpen(false); };
-  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+  const toggleTheme = () => setTheme(th => th === 'dark' ? 'light' : 'dark');
 
   const now = new Date();
   const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
@@ -55,27 +55,23 @@ export default function App() {
   return (
     <div className="flex flex-col h-screen overflow-hidden select-none" style={{ background: 'var(--bg-primary)' }}>
 
-      {/* Auth gate */}
       {!user && <AuthModal onAuth={handleAuth} />}
 
       {/* ═══ Top Bar ═══ */}
       <div className="flex items-center justify-between px-3 py-1.5 border-b flex-shrink-0 gap-2"
         style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-color)', height: '38px' }}>
-        {/* Left: Logo */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          <div className="font-bold text-sm tracking-wider" style={{ color: 'var(--gold)' }}>VSE</div>
-          <div className="text-xs hidden sm:block" style={{ color: 'var(--text-muted)' }}>Virtual Stock Exchange</div>
+          <div className="font-bold text-sm tracking-wider" style={{ color: 'var(--gold)' }}>{t('vse')}</div>
+          <div className="text-xs hidden sm:block" style={{ color: 'var(--text-muted)' }}>{t('vseFullName')}</div>
           <div className="w-px h-4" style={{ background: 'var(--border-color)' }} />
           <div className="pulse-dot" />
-          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>LIVE</span>
-          {/* Mobile toggles */}
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('live')}</span>
           <button className="md:hidden text-xs px-2 py-0.5 rounded" style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)' }}
             onClick={() => setSidebarOpen(v => !v)}>☰</button>
           <button className="lg:hidden text-xs px-2 py-0.5 rounded" style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)' }}
             onClick={() => setRightPanelOpen(v => !v)}>⊞</button>
         </div>
 
-        {/* Center: selected stock ticker */}
         {selectedStock && (
           <div className="flex items-center gap-3 text-xs font-mono flex-1 justify-center">
             <span className="font-bold" style={{ color: 'var(--text-bright)' }}>{selectedStock.symbol}</span>
@@ -90,20 +86,26 @@ export default function App() {
           </div>
         )}
 
-        {/* Right: Actions + user */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <span className="text-xs font-mono hidden xl:inline" style={{ color: 'var(--text-muted)' }}>
-            Cash: <span style={{ color: 'var(--text-bright)' }}>${portfolio.balance.toLocaleString()}</span>
-            &nbsp;P&L: <span className={portfolio.pnl >= 0 ? 'price-up' : 'price-down'}>
+            {t('cash')}: <span style={{ color: 'var(--text-bright)' }}>${portfolio.balance.toLocaleString()}</span>
+            &nbsp;{t('pnl')}: <span className={portfolio.pnl >= 0 ? 'price-up' : 'price-down'}>
               {portfolio.pnl >= 0 ? '+' : ''}${portfolio.pnl.toLocaleString()}
             </span>
           </span>
 
-          {/* Theme toggle */}
+          {/* Language toggle */}
+          <button onClick={toggleLang}
+            className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all font-bold"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
+            title={lang === 'en' ? '切换到中文' : 'Switch to English'}>
+            {lang === 'en' ? '中' : 'EN'}
+          </button>
+
           <button onClick={toggleTheme}
             className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
-            title={theme === 'dark' ? 'Switch to Light' : 'Switch to Dark'}>
+            title={theme === 'dark' ? t('switchToLight') : t('switchToDark')}>
             {theme === 'dark' ? '🌙' : '☀️'}
           </button>
 
@@ -125,7 +127,6 @@ export default function App() {
             🏆
           </button>
 
-          {/* User menu */}
           {user && (
             <div className="relative">
               <button
@@ -151,16 +152,16 @@ export default function App() {
                   </div>
                   <button onClick={() => { setShowCompetition(true); setUserMenuOpen(false); }}
                     className="w-full text-left px-3 py-2 text-xs hover:bg-dark-600" style={{ color: 'var(--text-secondary)' }}>
-                    🏆 Competition
+                    🏆 {t('competition')}
                   </button>
                   <button onClick={() => { setShowAlerts(true); setUserMenuOpen(false); }}
                     className="w-full text-left px-3 py-2 text-xs hover:bg-dark-600" style={{ color: 'var(--text-secondary)' }}>
-                    🔔 My Alerts
+                    {t('myAlerts')}
                   </button>
                   <div style={{ borderTop: '1px solid var(--bg-hover)', marginTop: '4px' }} />
                   <button onClick={handleLogout}
                     className="w-full text-left px-3 py-2 text-xs" style={{ color: 'var(--down-color)' }}>
-                    ⎋ Sign Out
+                    {t('signOut')}
                   </button>
                 </div>
               )}
@@ -171,13 +172,11 @@ export default function App() {
 
       {/* ═══ Main Content ═══ */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Watchlist (collapsible on mobile) */}
         <div className={`flex-shrink-0 border-r transition-all duration-200 ${sidebarOpen ? '' : 'hidden md:block'}`}
           style={{ width: '160px', borderColor: 'var(--border-color)' }}>
           <Watchlist stocks={stocks} selectedSymbol={selectedSymbol} setSelectedSymbol={setSelectedSymbol} />
         </div>
 
-        {/* Chart + Portfolio */}
         <div className="flex flex-col flex-1 overflow-hidden">
           <div className="flex-1 overflow-hidden" style={{ minHeight: 0 }}>
             <Chart stock={selectedStock} timeframe={timeframe} setTimeframe={setTimeframe} theme={theme} />
@@ -189,7 +188,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Order Book + Trade Panel (collapsible on mobile) */}
         <div className={`flex-shrink-0 flex flex-col border-l transition-all duration-200 ${rightPanelOpen ? '' : 'hidden lg:flex'}`}
           style={{ width: '340px', borderColor: 'var(--border-color)' }}>
           <div className="flex flex-1 overflow-hidden">
@@ -207,18 +205,18 @@ export default function App() {
       {/* ═══ Status Bar ═══ */}
       <div className="status-bar">
         <div className="flex items-center gap-3">
-          <span>📡 Connected</span>
+          <span>{t('connected')}</span>
           <span>•</span>
-          <span>{stocks.length} symbols</span>
+          <span>{stocks.length} {t('symbols')}</span>
           {pendingOrders.length > 0 && (
             <>
               <span>•</span>
-              <span>📋 {pendingOrders.length} pending</span>
+              <span>📋 {pendingOrders.length} {t('pending')}</span>
             </>
           )}
         </div>
         <div className="flex items-center gap-3">
-          <span>Equity: <span style={{ color: 'var(--text-primary)' }}>
+          <span>{t('equity')}: <span style={{ color: 'var(--text-primary)' }}>
             ${(portfolio.balance + Object.entries(portfolio.positions).reduce((s, [sym, pos]) => {
               const stock = stocks.find(st => st.symbol === sym);
               return s + (stock ? stock.currentPrice * pos.shares : 0);
@@ -236,7 +234,6 @@ export default function App() {
         <AlertsPanel userId={user.id} stocks={stocks} selectedSymbol={selectedSymbol} onClose={() => setShowAlerts(false)} />
       )}
 
-      {/* Toast alerts */}
       <AlertToast alerts={alerts} />
     </div>
   );
