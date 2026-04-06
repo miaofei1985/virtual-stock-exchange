@@ -2,12 +2,51 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== CSS Variables for Theming ===== */
+:root {
+  --bg-primary: #0d0d0f;
+  --bg-secondary: #141418;
+  --bg-panel: #1a1a22;
+  --bg-surface: #22222a;
+  --bg-hover: #2a2a35;
+  --bg-active: #32323e;
+  --border-color: #2a2a35;
+  --border-light: #3a3a48;
+  --text-primary: #e0e0e0;
+  --text-secondary: #888;
+  --text-muted: #555;
+  --text-bright: #ffffff;
+  --up-color: #26a69a;
+  --down-color: #ef5350;
+  --gold: #f0b90b;
+  --accent: #2196f3;
+  --shadow: rgba(0,0,0,0.5);
+}
+
+[data-theme="light"] {
+  --bg-primary: #f5f5f5;
+  --bg-secondary: #ffffff;
+  --bg-panel: #fafafa;
+  --bg-surface: #f0f0f0;
+  --bg-hover: #e8e8e8;
+  --bg-active: #ddd;
+  --border-color: #e0e0e0;
+  --border-light: #ccc;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666;
+  --text-muted: #999;
+  --text-bright: #000;
+  --shadow: rgba(0,0,0,0.1);
+}
+
+/* ===== Base ===== */
 body {
-  background: #0d0d0f;
-  color: #e0e0e0;
-  font-family: 'JetBrains Mono', monospace;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
   height: 100vh;
   overflow: hidden;
+  transition: background 0.3s, color 0.3s;
 }
 
 #root {
@@ -16,12 +55,32 @@ body {
   flex-direction: column;
 }
 
-.price-up { color: #26a69a; }
-.price-down { color: #ef5350; }
-.price-neutral { color: #888; }
+/* ===== Utility Classes ===== */
+.price-up { color: var(--up-color); }
+.price-down { color: var(--down-color); }
+.price-neutral { color: var(--text-secondary); }
+.text-gold { color: var(--gold); }
+.bg-dark-300 { background: var(--border-light); }
+.bg-dark-400 { background: var(--border-color); }
+.bg-dark-500 { background: var(--bg-hover); }
+.bg-dark-600 { background: var(--bg-surface); }
+.bg-dark-700 { background: var(--bg-panel); }
+.bg-dark-800 { background: var(--bg-secondary); }
+.bg-dark-900 { background: var(--bg-primary); }
+.border-dark-300 { border-color: var(--border-light); }
+.border-dark-400 { border-color: var(--border-color); }
+.border-dark-500 { border-color: var(--border-color); }
+.border-dark-600 { border-color: var(--bg-hover); }
+.border-dark-700 { border-color: var(--bg-surface); }
+.border-panel { border-color: var(--border-color); }
+.bg-divider { background: var(--border-color); }
+.toolbar-bg { background: var(--bg-secondary); }
+.surface-bg { background: var(--bg-surface); }
+.panel-bg { background: var(--bg-panel); }
 
+/* ===== Buttons ===== */
 .btn-buy {
-  background: #26a69a;
+  background: var(--up-color);
   color: white;
   border: none;
   padding: 8px 24px;
@@ -32,10 +91,10 @@ body {
   font-size: 13px;
   transition: all 0.15s;
 }
-.btn-buy:hover { background: #2bbbad; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(38,166,154,0.4); }
+.btn-buy:hover { filter: brightness(1.15); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(38,166,154,0.4); }
 
 .btn-sell {
-  background: #ef5350;
+  background: var(--down-color);
   color: white;
   border: none;
   padding: 8px 24px;
@@ -46,31 +105,145 @@ body {
   font-size: 13px;
   transition: all 0.15s;
 }
-.btn-sell:hover { background: #f44336; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(239,83,80,0.4); }
+.btn-sell:hover { filter: brightness(1.15); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(239,83,80,0.4); }
 
-.ticker-row:hover { background: rgba(255,255,255,0.04); cursor: pointer; }
-.ticker-row.active { background: rgba(38,166,154,0.12); border-left: 2px solid #26a69a; }
+.ticker-row { transition: background 0.1s; }
+.ticker-row:hover { background: var(--bg-hover); cursor: pointer; }
+.ticker-row.active { background: rgba(38,166,154,0.12); border-left: 2px solid var(--up-color); }
 
+/* ===== Inputs ===== */
 .input-dark {
-  background: #22222a;
-  border: 1px solid #3a3a48;
-  color: #e0e0e0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
   border-radius: 4px;
   padding: 6px 10px;
   font-family: inherit;
   font-size: 13px;
   outline: none;
   width: 100%;
+  transition: border-color 0.15s;
 }
-.input-dark:focus { border-color: #26a69a; }
+.input-dark:focus { border-color: var(--up-color); }
 
-.tab-btn { padding: 4px 12px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: all 0.15s; color: #888; background: transparent; border: 1px solid transparent; }
-.tab-btn.active { background: #22222a; color: #e0e0e0; border-color: #3a3a48; }
-.tab-btn:hover:not(.active) { color: #ccc; }
+/* ===== Tabs ===== */
+.tab-btn {
+  padding: 4px 12px;
+  border-radius: 3px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+}
+.tab-btn.active {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+.tab-btn:hover:not(.active) { color: var(--text-primary); }
 
+/* ===== Animations ===== */
 @keyframes flash-up { 0%,100%{background:transparent} 50%{background:rgba(38,166,154,0.25)} }
 @keyframes flash-down { 0%,100%{background:transparent} 50%{background:rgba(239,83,80,0.25)} }
 .flash-up { animation: flash-up 0.4s ease; }
 .flash-down { animation: flash-down 0.4s ease; }
 
-.order-book-row { display: grid; grid-template-columns: 1fr 1fr 1fr; font-size: 11px; padding: 2px 8px; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in { animation: fadeIn 0.2s ease; }
+
+@keyframes slideIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+.slide-in { animation: slideIn 0.25s ease; }
+
+/* ===== Order Book ===== */
+.order-book-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  font-size: 11px;
+  padding: 2px 8px;
+}
+
+/* ===== Status Bar ===== */
+.status-bar {
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  padding: 2px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  height: 22px;
+}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--bg-hover); }
+
+/* ===== Theme Toggle ===== */
+.theme-toggle {
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s;
+}
+.theme-toggle::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  top: 2px;
+  left: 2px;
+  transition: all 0.3s;
+}
+.theme-toggle.active {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.theme-toggle.active::after {
+  left: 18px;
+  background: white;
+}
+
+/* ===== Modal Overlay ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .order-book-row { font-size: 10px; padding: 2px 4px; }
+  .tab-btn { padding: 3px 8px; font-size: 10px; }
+}
+
+/* ===== Pulse dot ===== */
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--up-color);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ===== Selection colors ===== */
+::selection {
+  background: rgba(33, 150, 243, 0.3);
+  color: inherit;
+}

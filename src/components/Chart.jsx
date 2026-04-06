@@ -1,11 +1,11 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createChart, CrosshairMode } from 'lightweight-charts';
 import { calcSMA, calcEMA, calcBollinger, calcRSI, calcMACD, calcVolume, calcATR, calcStochastic, calcVWAP } from '../utils/indicators';
 import { TIMEFRAMES } from '../data/stocks';
 
 const INDICATOR_OPTIONS = ['Volume', 'SMA 20', 'EMA 9', 'EMA 21', 'Bollinger', 'RSI', 'MACD', 'ATR', 'Stochastic', 'VWAP'];
 
-export default function Chart({ stock, timeframe, setTimeframe }) {
+export default function Chart({ stock, timeframe, setTimeframe, theme }) {
   const containerRef = useRef(null);
   const chartRef = useRef(null);
   const candleSeriesRef = useRef(null);
@@ -13,10 +13,22 @@ export default function Chart({ stock, timeframe, setTimeframe }) {
   const seriesRefs = useRef({});
   const [indicators, setIndicators] = useState(['Volume', 'EMA 9', 'EMA 21']);
   const [crosshairData, setCrosshairData] = useState(null);
+  const isDark = theme === 'dark';
 
   const toggleIndicator = (ind) => {
     setIndicators(prev => prev.includes(ind) ? prev.filter(i => i !== ind) : [...prev, ind]);
   };
+
+  const colors = {
+    dark: {
+      bg: '#141418', text: '#888', grid: '#1e1e26', border: '#2a2a35',
+      crosshair: '#555', upCandle: '#26a69a', downCandle: '#ef5350',
+    },
+    light: {
+      bg: '#ffffff', text: '#666', grid: '#f0f0f0', border: '#e0e0e0',
+      crosshair: '#aaa', upCandle: '#26a69a', downCandle: '#ef5350',
+    },
+  }[isDark ? 'dark' : 'light'];
 
   const buildCharts = useCallback(() => {
     if (!containerRef.current) return;
@@ -25,7 +37,6 @@ export default function Chart({ stock, timeframe, setTimeframe }) {
     const w = container.clientWidth;
     const hasSubChart = indicators.includes('RSI') || indicators.includes('MACD') || indicators.includes('ATR') || indicators.includes('Stochastic');
 
-    // Cleanup
     if (chartRef.current) { try { chartRef.current.remove(); } catch {} chartRef.current = null; }
     if (subChartRef.current) { try { subChartRef.current.remove(); } catch {} subChartRef.current = null; }
     seriesRefs.current = {};
@@ -34,14 +45,13 @@ export default function Chart({ stock, timeframe, setTimeframe }) {
     const subH = hasSubChart ? h - mainH : 0;
 
     const baseOpts = {
-      layout: { background: { color: '#141418' }, textColor: '#888' },
-      grid: { vertLines: { color: '#1e1e26' }, horzLines: { color: '#1e1e26' } },
-      crosshair: { mode: CrosshairMode.Normal, vertLine: { color: '#555', style: 1 }, horzLine: { color: '#555', style: 1 } },
-      rightPriceScale: { borderColor: '#2a2a35', scaleMargins: { top: 0.08, bottom: hasSubChart ? 0.05 : 0.08 } },
-      timeScale: { borderColor: '#2a2a35', timeVisible: true, secondsVisible: false },
+      layout: { background: { color: colors.bg }, textColor: colors.text },
+      grid: { vertLines: { color: colors.grid }, horzLines: { color: colors.grid } },
+      crosshair: { mode: CrosshairMode.Normal, vertLine: { color: colors.crosshair, style: 1 }, horzLine: { color: colors.crosshair, style: 1 } },
+      rightPriceScale: { borderColor: colors.border, scaleMargins: { top: 0.08, bottom: hasSubChart ? 0.05 : 0.08 } },
+      timeScale: { borderColor: colors.border, timeVisible: true, secondsVisible: false },
     };
 
-    // Main chart
     const mainDiv = document.createElement('div');
     mainDiv.style.cssText = `width:${w}px;height:${mainH}px;`;
     container.appendChild(mainDiv);
@@ -51,27 +61,19 @@ export default function Chart({ stock, timeframe, setTimeframe }) {
     const candles = stock?.history?.[timeframe];
     if (!candles || candles.length === 0) return;
 
-    // Candlestick series
     const candleSeries = chart.addCandlestickSeries({
-      upColor: '#26a69a', downColor: '#ef5350',
-      borderUpColor: '#26a69a', borderDownColor: '#ef5350',
-      wickUpColor: '#26a69a', wickDownColor: '#ef5350',
+      upColor: colors.upCandle, downColor: colors.downCandle,
+      borderUpColor: colors.upCandle, borderDownColor: colors.downCandle,
+      wickUpColor: colors.upCandle, wickDownColor: colors.downCandle,
     });
     candleSeries.setData(candles);
     candleSeriesRef.current = candleSeries;
 
-    // Volume histogram on main chart
     if (indicators.includes('Volume')) {
-      const volSeries = chart.addHistogramSeries({
-        priceFormat: { type: 'volume' },
-        priceScaleId: 'vol',
-        scaleMargins: { top: 0.8, bottom: 0 },
-      });
+      const volSeries = chart.addHistogramSeries({ priceFormat: { type: 'volume' }, priceScaleId: 'vol', scaleMargins: { top: 0.8, bottom: 0 } });
       volSeries.setData(calcVolume(candles));
       seriesRefs.current['Volume'] = volSeries;
     }
-
-    // Overlays on main chart
     if (indicators.includes('SMA 20')) {
       const s = chart.addLineSeries({ color: '#f0b90b', lineWidth: 1, priceLineVisible: false });
       s.setData(calcSMA(candles, 20));
@@ -101,14 +103,12 @@ export default function Chart({ stock, timeframe, setTimeframe }) {
       seriesRefs.current['VWAP'] = s;
     }
 
-    // Crosshair
     chart.subscribeCrosshairMove(param => {
       if (!param.time) { setCrosshairData(null); return; }
       const cd = param.seriesData.get(candleSeries);
       if (cd) setCrosshairData(cd);
     });
 
-    // Sub chart (RSI or MACD)
     if (hasSubChart && subH > 0) {
       const subDiv = document.createElement('div');
       subDiv.style.cssText = `width:${w}px;height:${subH}px;margin-top:2px;`;
@@ -116,7 +116,7 @@ export default function Chart({ stock, timeframe, setTimeframe }) {
       const subChart = createChart(subDiv, {
         ...baseOpts, width: w, height: subH,
         timeScale: { ...baseOpts.timeScale, visible: false },
-        rightPriceScale: { borderColor: '#2a2a35', scaleMargins: { top: 0.1, bottom: 0.1 } },
+        rightPriceScale: { borderColor: colors.border, scaleMargins: { top: 0.1, bottom: 0.1 } },
       });
       subChartRef.current = subChart;
 
@@ -124,7 +124,6 @@ export default function Chart({ stock, timeframe, setTimeframe }) {
         const rsiData = calcRSI(candles);
         const rsiSeries = subChart.addLineSeries({ color: '#e91e63', lineWidth: 1.5, priceLineVisible: false });
         rsiSeries.setData(rsiData);
-        // OB/OS lines
         const ob = subChart.addLineSeries({ color: 'rgba(239,83,80,0.4)', lineWidth: 1, lineStyle: 2, priceLineVisible: false });
         const os = subChart.addLineSeries({ color: 'rgba(38,166,154,0.4)', lineWidth: 1, lineStyle: 2, priceLineVisible: false });
         if (rsiData.length) {
@@ -133,7 +132,6 @@ export default function Chart({ stock, timeframe, setTimeframe }) {
           os.setData([{ time: t0, value: 30 }, { time: t1, value: 30 }]);
         }
       }
-
       if (indicators.includes('MACD')) {
         const { macdLine, signalLine, histogram } = calcMACD(candles);
         const hist = subChart.addHistogramSeries({ priceLineVisible: false });
@@ -143,13 +141,11 @@ export default function Chart({ stock, timeframe, setTimeframe }) {
         const sl = subChart.addLineSeries({ color: '#ff9800', lineWidth: 1.5, priceLineVisible: false });
         sl.setData(signalLine);
       }
-
       if (indicators.includes('ATR')) {
         const atrData = calcATR(candles);
         const atrSeries = subChart.addLineSeries({ color: '#00bcd4', lineWidth: 1.5, priceLineVisible: false });
         atrSeries.setData(atrData);
       }
-
       if (indicators.includes('Stochastic')) {
         const { kLine, dLine } = calcStochastic(candles);
         const kSeries = subChart.addLineSeries({ color: '#2196f3', lineWidth: 1.5, priceLineVisible: false });
@@ -171,7 +167,7 @@ export default function Chart({ stock, timeframe, setTimeframe }) {
     }
 
     chart.timeScale().fitContent();
-  }, [stock?.symbol, timeframe, indicators]);
+  }, [stock?.symbol, timeframe, indicators, theme]);
 
   useEffect(() => {
     buildCharts();
@@ -182,7 +178,6 @@ export default function Chart({ stock, timeframe, setTimeframe }) {
     };
   }, [buildCharts]);
 
-  // Update last candle on price tick
   useEffect(() => {
     const candles = stock?.history?.[timeframe];
     if (!candles?.length || !candleSeriesRef.current) return;
@@ -191,26 +186,22 @@ export default function Chart({ stock, timeframe, setTimeframe }) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Toolbar */}
-      <div className="flex items-center gap-2 px-3 py-1.5 border-b border-dark-500 bg-dark-800 flex-shrink-0 flex-wrap">
-        {/* Timeframes */}
+      <div className="flex items-center gap-2 px-3 py-1.5 border-b border-panel flex-shrink-0 flex-wrap toolbar-bg">
         <div className="flex gap-1">
           {TIMEFRAMES.map(tf => (
             <button key={tf.label} className={`tab-btn ${timeframe === tf.label ? 'active' : ''}`}
               onClick={() => setTimeframe(tf.label)}>{tf.label}</button>
           ))}
         </div>
-        <div className="w-px h-4 bg-dark-400 mx-1" />
-        {/* Indicators */}
+        <div className="w-px h-4 bg-divider mx-1" />
         <div className="flex gap-1 flex-wrap">
           {INDICATOR_OPTIONS.map(ind => (
             <button key={ind} className={`tab-btn text-xs ${indicators.includes(ind) ? 'active' : ''}`}
               onClick={() => toggleIndicator(ind)}>{ind}</button>
           ))}
         </div>
-        {/* Crosshair data */}
         {crosshairData && (
-          <div className="ml-auto flex gap-3 text-xs font-mono">
+          <div className="ml-auto flex gap-3 text-xs font-mono hidden md:flex">
             <span>O: <span className={crosshairData.open <= crosshairData.close ? 'price-up' : 'price-down'}>${crosshairData.open}</span></span>
             <span>H: <span className="price-up">${crosshairData.high}</span></span>
             <span>L: <span className="price-down">${crosshairData.low}</span></span>
@@ -218,7 +209,6 @@ export default function Chart({ stock, timeframe, setTimeframe }) {
           </div>
         )}
       </div>
-      {/* Chart container */}
       <div ref={containerRef} className="flex-1 overflow-hidden" style={{ minHeight: 0 }} />
     </div>
   );
